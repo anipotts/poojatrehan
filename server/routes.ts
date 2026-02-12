@@ -1,8 +1,7 @@
 import type { Express } from "express";
 import type { Server } from "http";
-import passport from "passport";
 import multer from "multer";
-import { requireAuth, requireGuest } from "./middleware/auth";
+import { requireAuth, login as jwtLogin } from "./middleware/jwt-auth";
 import * as portfolioService from "./services/portfolio";
 import * as blobService from "./services/blob";
 
@@ -14,51 +13,47 @@ export function registerRoutes(
   app: Express
 ): Promise<Server> {
   // ===================
-  // Auth Routes
+  // Auth Routes - JWT-based
   // ===================
 
-  app.post("/api/auth/login", requireGuest, (req, res, next) => {
-    passport.authenticate("local", (err: any, user: any, info: any) => {
-      if (err) {
-        return next(err);
+  app.post("/api/auth/login", async (req, res, next) => {
+    try {
+      const { username, password } = req.body;
+
+      if (!username || !password) {
+        return res.status(400).json({ message: "Username and password required" });
       }
-      if (!user) {
-        return res.status(401).json({ message: info?.message || "Authentication failed" });
+
+      const result = await jwtLogin(username, password);
+      if (!result) {
+        return res.status(401).json({ message: "Incorrect username or password." });
       }
-      req.logIn(user, (err) => {
-        if (err) {
-          return next(err);
-        }
-        return res.json({
-          message: "Login successful",
-          user: {
-            id: user.id,
-            username: user.username,
-          }
-        });
+
+      // Set JWT token as httpOnly cookie
+      res.cookie("auth_token", result.token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       });
-    })(req, res, next);
-  });
 
-  app.post("/api/auth/logout", requireAuth, (req, res, next) => {
-    req.logout((err) => {
-      if (err) {
-        return next(err);
-      }
-      res.json({ message: "Logout successful" });
-    });
-  });
-
-  app.get("/api/auth/me", (req, res) => {
-    if (req.isAuthenticated() && req.user) {
       return res.json({
-        user: {
-          id: req.user.id,
-          username: req.user.username,
-        }
+        message: "Login successful",
+        user: result.user,
       });
+    } catch (error) {
+      next(error);
     }
-    res.status(401).json({ message: "Not authenticated" });
+  });
+
+  app.post("/api/auth/logout", (req, res) => {
+    res.clearCookie("auth_token");
+    res.json({ message: "Logout successful" });
+  });
+
+  app.get("/api/auth/me", requireAuth, (req, res) => {
+    const user = (req as any).user;
+    res.json({ user });
   });
 
   // ===================
