@@ -129,7 +129,7 @@ export default function LivePreviewPane({
         </div>
 
         <div className="relative grain">
-          <header className="mx-auto w-full max-w-6xl px-5 pt-5 md:px-8 md:pt-8">
+          <header className="mx-auto w-full max-w-6xl px-5 pt-5 pb-2 md:px-8 md:pt-8 md:pb-3">
             <nav className="flex items-center justify-between gap-3">
               <a
                 href="#top"
@@ -147,24 +147,33 @@ export default function LivePreviewPane({
               </a>
 
               <div className="flex items-center gap-2">
-                <a
-                  href="#experience"
+                <button
+                  onClick={() => {
+                    sectionRefs.current["experience"]?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    onSectionClick?.("experience");
+                  }}
                   className="hidden rounded-full px-3 py-2 text-sm text-muted-foreground transition hover:text-foreground md:inline-flex"
                 >
                   Experience
-                </a>
-                <a
-                  href="#education"
+                </button>
+                <button
+                  onClick={() => {
+                    sectionRefs.current["education"]?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    onSectionClick?.("education");
+                  }}
                   className="hidden rounded-full px-3 py-2 text-sm text-muted-foreground transition hover:text-foreground md:inline-flex"
                 >
                   Education
-                </a>
-                <a
-                  href="#skills"
+                </button>
+                <button
+                  onClick={() => {
+                    sectionRefs.current["skills"]?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    onSectionClick?.("skills");
+                  }}
                   className="hidden rounded-full px-3 py-2 text-sm text-muted-foreground transition hover:text-foreground md:inline-flex"
                 >
                   Skills
-                </a>
+                </button>
                 <Button
                   variant="outline"
                   className="rounded-full bg-card/70 backdrop-blur"
