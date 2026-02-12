@@ -39,14 +39,8 @@ setupPassport();
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Register routes synchronously wrapped
-(async () => {
-  try {
-    await registerRoutes(httpServer, app);
-  } catch (error) {
-    console.error("Failed to register routes:", error);
-  }
-})();
+// Register routes
+registerRoutes(httpServer, app);
 
 // Error handler
 app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
