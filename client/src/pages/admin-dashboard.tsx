@@ -469,10 +469,12 @@ export default function AdminDashboard() {
           <>
             <PanelResizeHandle className="w-1 bg-border hover:bg-primary/50 transition-colors" />
             <Panel defaultSize={50} minSize={30}>
-              <div className="h-full overflow-y-auto">
-                <div className="sticky top-0 z-10 bg-card/95 backdrop-blur px-4 py-2 border-b">
-                  <div className="inline-flex items-center gap-2 rounded-full border bg-yellow-500/10 text-yellow-700 border-yellow-500/20 px-3 py-1 text-xs font-medium">
-                    <Edit className="h-3 w-3" /> Draft
+              <div className="relative h-full overflow-y-auto">
+                <div className="pointer-events-none sticky top-0 z-20 h-0 overflow-visible">
+                  <div className="px-3 pt-3">
+                    <div className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full border bg-yellow-500/10 text-yellow-700 border-yellow-500/20 px-2.5 py-1 text-xs font-medium backdrop-blur-sm shadow-sm">
+                      <Edit className="h-3 w-3" /> Draft
+                    </div>
                   </div>
                 </div>
                 <LivePreviewPane
