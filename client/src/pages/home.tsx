@@ -125,7 +125,9 @@ export default function Home() {
   const { data: portfolio, isLoading, error } = useQuery({
     queryKey: ["portfolio", "published"],
     queryFn: portfolioApi.getPublished,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 0, // Always fetch fresh data to show admin updates immediately
+    refetchOnWindowFocus: true, // Refetch when tab is focused
+    refetchInterval: 30000, // Check for updates every 30 seconds
   });
 
   // Apply dynamic theme colors
