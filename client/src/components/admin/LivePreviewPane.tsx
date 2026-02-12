@@ -123,7 +123,7 @@ export default function LivePreviewPane({
 
   return (
     <div className="surface h-full overflow-y-auto">
-      <div className="relative">
+      <div className="relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute -top-28 left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-gradient-to-b from-primary/20 to-transparent blur-3xl" />
         </div>
@@ -131,16 +131,40 @@ export default function LivePreviewPane({
         <div className="relative grain">
           <header className="mx-auto w-full max-w-6xl px-5 pt-5 md:px-8 md:pt-8">
             <nav className="flex items-center justify-between gap-3">
-              <div className="focus-ring inline-flex items-center gap-2 rounded-full border bg-card px-3 py-2 shadow-elev-sm">
-                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  <BadgeCheck className="h-4 w-4" aria-hidden="true" />
-                </span>
+              <a
+                href="#top"
+                className="focus-ring inline-flex items-center gap-2 rounded-full border bg-card px-3 py-2 shadow-elev-sm"
+              >
+                <img
+                  src="/favicon.svg"
+                  alt="PT"
+                  className="h-8 w-8 rounded-lg"
+                  aria-hidden="true"
+                />
                 <span className="text-sm font-semibold tracking-[-0.01em]">
                   {portfolio.profileName}
                 </span>
-              </div>
+              </a>
 
               <div className="flex items-center gap-2">
+                <a
+                  href="#experience"
+                  className="hidden rounded-full px-3 py-2 text-sm text-muted-foreground transition hover:text-foreground md:inline-flex"
+                >
+                  Experience
+                </a>
+                <a
+                  href="#education"
+                  className="hidden rounded-full px-3 py-2 text-sm text-muted-foreground transition hover:text-foreground md:inline-flex"
+                >
+                  Education
+                </a>
+                <a
+                  href="#skills"
+                  className="hidden rounded-full px-3 py-2 text-sm text-muted-foreground transition hover:text-foreground md:inline-flex"
+                >
+                  Skills
+                </a>
                 <Button
                   variant="outline"
                   className="rounded-full bg-card/70 backdrop-blur"
@@ -157,7 +181,7 @@ export default function LivePreviewPane({
             </nav>
           </header>
 
-          <main className="mx-auto w-full max-w-6xl px-5 pb-20 md:px-8">
+          <main id="top" className="mx-auto w-full max-w-6xl px-5 pb-20 md:px-8">
             <section
               className={`animate-in pt-10 md:pt-16 cursor-pointer rounded-lg transition-all ${
                 activeTab === "profile" ? "ring-2 ring-primary/50 bg-primary/5 p-4" : ""
@@ -165,30 +189,17 @@ export default function LivePreviewPane({
               onClick={() => handleSectionClick("profile")}
               ref={(el) => { sectionRefs.current["profile"] = el; }}
             >
-              <div className="mt-8 grid grid-cols-1 items-start gap-12 lg:grid-cols-[1fr_400px] animate-item">
+              <div className="mt-8 grid grid-cols-1 items-start gap-12 lg:grid-cols-[1fr_400px]">
                 <div>
-                  <div className="inline-flex items-center gap-2 rounded-full border bg-card/70 px-3 py-2 text-xs text-muted-foreground shadow-elev-sm backdrop-blur animate-item">
-                    <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500" aria-hidden="true" />
-                    {portfolio.heroStatus}
-                  </div>
+                  <h1 className="animate-item mt-8 text-balance font-serif text-4xl font-semibold tracking-[-0.03em] md:text-6xl">
+                    {portfolio.heroTitle}
+                  </h1>
 
-                  <div className="mt-5 flex items-center gap-3 animate-item">
-                    <img
-                      src="/favicon.svg"
-                      alt="PT"
-                      className="h-12 w-12 rounded-lg border-2 transition-colors"
-                      style={{ borderColor: 'hsl(var(--primary))' }}
-                    />
-                    <h1 className="text-balance font-serif text-4xl font-semibold tracking-[-0.03em] md:text-6xl">
-                      {portfolio.heroTitle}
-                    </h1>
-                  </div>
-
-                  <p className="mt-4 max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground md:text-lg animate-item">
+                  <p className="animate-item mt-4 max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground md:text-lg">
                     {portfolio.heroSubtitle}
                   </p>
 
-                  <div className="mt-7 flex flex-wrap items-center gap-2 animate-item">
+                  <div className="animate-item mt-7 flex flex-wrap items-center gap-2">
                     <Anchor href={`mailto:${portfolio.profileEmail}`}>
                       <Mail className="h-4 w-4" aria-hidden="true" />
                       {portfolio.profileEmail}
@@ -207,7 +218,7 @@ export default function LivePreviewPane({
                   </div>
                 </div>
 
-                <div className="relative mx-auto w-full max-w-sm lg:mx-0 lg:max-w-none animate-item">
+                <div className="animate-item relative mx-auto w-full max-w-sm lg:mx-0 lg:max-w-none">
                   <div className="aspect-[4/5] overflow-hidden rounded-[2rem] border bg-muted shadow-elev">
                     {portfolio.profileImageUrl ? (
                       <img
@@ -224,7 +235,7 @@ export default function LivePreviewPane({
                 </div>
               </div>
 
-              <div className="mt-10 grid grid-cols-1 gap-4 md:grid-cols-3 animate-item">
+              <div className="animate-item mt-10 grid grid-cols-1 gap-4 md:grid-cols-3">
                 <Card className="shadow-elev-sm border bg-card/70 p-5 backdrop-blur">
                   <div className="flex items-start gap-3">
                     <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -406,9 +417,10 @@ export default function LivePreviewPane({
                     <Mail className="h-4 w-4" aria-hidden="true" />
                     Email
                   </Anchor>
-                  <span className="text-xs text-muted-foreground">
-                    Live Preview (Draft)
-                  </span>
+                  <Anchor href="#top">
+                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                    Back to top
+                  </Anchor>
                 </div>
               </div>
             </footer>
