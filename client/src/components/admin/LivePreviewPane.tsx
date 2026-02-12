@@ -1,5 +1,4 @@
 import { useEffect, useState, useRef } from "react";
-import { motion, useReducedMotion } from "framer-motion";
 import {
   ArrowRight,
   BadgeCheck,
@@ -90,7 +89,6 @@ export default function LivePreviewPane({
   highlightedSection,
   activeTab,
 }: LivePreviewPaneProps) {
-  const reduceMotion = useReducedMotion();
   const { theme, toggle } = useTheme();
   const sectionRefs = useRef<{ [key: string]: HTMLElement | null }>({});
 
@@ -116,23 +114,6 @@ export default function LivePreviewPane({
       }
     }
   }, [portfolio?.themeColors]);
-
-  const container = {
-    hidden: { opacity: 0, y: reduceMotion ? 0 : 12 },
-    show: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.55,
-        staggerChildren: 0.08,
-      },
-    },
-  };
-
-  const item = {
-    hidden: { opacity: 0, y: reduceMotion ? 0 : 10 },
-    show: { opacity: 1, y: 0 },
-  };
 
   const handleSectionClick = (section: string) => {
     if (onSectionClick) {
@@ -177,30 +158,21 @@ export default function LivePreviewPane({
           </header>
 
           <main className="mx-auto w-full max-w-6xl px-5 pb-20 md:px-8">
-            <motion.section
-              className={`pt-10 md:pt-16 cursor-pointer rounded-lg transition-all ${
+            <section
+              className={`animate-in pt-10 md:pt-16 cursor-pointer rounded-lg transition-all ${
                 activeTab === "profile" ? "ring-2 ring-primary/50 bg-primary/5 p-4" : ""
               }`}
-              variants={container}
-              initial="hidden"
-              animate="show"
               onClick={() => handleSectionClick("profile")}
               ref={(el) => { sectionRefs.current["profile"] = el; }}
             >
-              <motion.div
-                variants={item}
-                className="mt-8 grid grid-cols-1 items-start gap-12 lg:grid-cols-[1fr_400px]"
-              >
+              <div className="mt-8 grid grid-cols-1 items-start gap-12 lg:grid-cols-[1fr_400px] animate-item">
                 <div>
-                  <motion.div
-                    variants={item}
-                    className="inline-flex items-center gap-2 rounded-full border bg-card/70 px-3 py-2 text-xs text-muted-foreground shadow-elev-sm backdrop-blur"
-                  >
+                  <div className="inline-flex items-center gap-2 rounded-full border bg-card/70 px-3 py-2 text-xs text-muted-foreground shadow-elev-sm backdrop-blur animate-item">
                     <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500" aria-hidden="true" />
                     {portfolio.heroStatus}
-                  </motion.div>
+                  </div>
 
-                  <motion.div variants={item} className="mt-5 flex items-center gap-3">
+                  <div className="mt-5 flex items-center gap-3 animate-item">
                     <img
                       src="/favicon.svg"
                       alt="PT"
@@ -210,16 +182,13 @@ export default function LivePreviewPane({
                     <h1 className="text-balance font-serif text-4xl font-semibold tracking-[-0.03em] md:text-6xl">
                       {portfolio.heroTitle}
                     </h1>
-                  </motion.div>
+                  </div>
 
-                  <motion.p
-                    variants={item}
-                    className="mt-4 max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground md:text-lg"
-                  >
+                  <p className="mt-4 max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground md:text-lg animate-item">
                     {portfolio.heroSubtitle}
-                  </motion.p>
+                  </p>
 
-                  <motion.div variants={item} className="mt-7 flex flex-wrap items-center gap-2">
+                  <div className="mt-7 flex flex-wrap items-center gap-2 animate-item">
                     <Anchor href={`mailto:${portfolio.profileEmail}`}>
                       <Mail className="h-4 w-4" aria-hidden="true" />
                       {portfolio.profileEmail}
@@ -235,16 +204,16 @@ export default function LivePreviewPane({
                       View experience
                       <ArrowRight className="h-4 w-4" aria-hidden="true" />
                     </a>
-                  </motion.div>
+                  </div>
                 </div>
 
-                <motion.div variants={item} className="relative mx-auto w-full max-w-sm lg:mx-0 lg:max-w-none">
+                <div className="relative mx-auto w-full max-w-sm lg:mx-0 lg:max-w-none animate-item">
                   <div className="aspect-[4/5] overflow-hidden rounded-[2rem] border bg-muted shadow-elev">
                     {portfolio.profileImageUrl ? (
                       <img
                         src={portfolio.profileImageUrl}
                         alt={portfolio.profileName}
-                        className="h-full w-full object-cover grayscale transition duration-700 hover:grayscale-0"
+                        className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center bg-muted">
@@ -252,10 +221,10 @@ export default function LivePreviewPane({
                       </div>
                     )}
                   </div>
-                </motion.div>
-              </motion.div>
+                </div>
+              </div>
 
-              <motion.div variants={item} className="mt-10 grid grid-cols-1 gap-4 md:grid-cols-3">
+              <div className="mt-10 grid grid-cols-1 gap-4 md:grid-cols-3 animate-item">
                 <Card className="shadow-elev-sm border bg-card/70 p-5 backdrop-blur">
                   <div className="flex items-start gap-3">
                     <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -297,8 +266,8 @@ export default function LivePreviewPane({
                     </div>
                   </div>
                 </Card>
-              </motion.div>
-            </motion.section>
+              </div>
+            </section>
 
             <section
               id="experience"

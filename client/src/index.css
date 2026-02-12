@@ -185,6 +185,35 @@
     }
   }
 
+  @keyframes magic-grow {
+    0% {
+      transform: scale(0.01);
+      opacity: 0;
+    }
+    60% {
+      transform: scale(1.05);
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  @keyframes success-checkmark {
+    0% {
+      transform: scale(0);
+      opacity: 0;
+    }
+    50% {
+      transform: scale(1.2);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
   @media (prefers-reduced-motion: no-preference) {
     .animate-in {
       animation: fade-in-up 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
@@ -206,6 +235,18 @@
   @media (prefers-reduced-motion: reduce) {
     .animate-in,
     .animate-item {
+      animation: none;
+      opacity: 1;
+      transform: none;
+    }
+
+    .magic-grow {
+      animation: none;
+      opacity: 1;
+      transform: none;
+    }
+
+    .success-checkmark {
       animation: none;
       opacity: 1;
       transform: none;

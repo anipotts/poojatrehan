@@ -46,6 +46,12 @@ export interface MeResponse {
 }
 
 export const authApi = {
+  magicLogin: (magicWord: string) =>
+    fetcher<LoginResponse>("/api/auth/magic-login", {
+      method: "POST",
+      body: { magicWord },
+    }),
+
   login: (username: string, password: string) =>
     fetcher<LoginResponse>("/api/auth/login", {
       method: "POST",
