@@ -37,12 +37,20 @@ export default function AdminDashboard() {
   const [showPreview, setShowPreview] = useState(false);
   const [showLivePreview, setShowLivePreview] = useState(false); // Start hidden on mobile
   const [compareMode, setCompareMode] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const queryClient = useQueryClient();
 
-  // Show live preview by default on desktop
+  // Show live preview by default on desktop, detect mobile state
   useEffect(() => {
-    const isDesktop = window.matchMedia('(min-width: 768px)').matches;
-    setShowLivePreview(isDesktop);
+    const checkMobile = () => {
+      const isDesktop = window.matchMedia('(min-width: 768px)').matches;
+      setIsMobile(!isDesktop);
+      setShowLivePreview(isDesktop);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   // Animation variants
@@ -272,7 +280,7 @@ export default function AdminDashboard() {
       {/* Main content */}
       <PanelGroup direction="horizontal" className="flex-1">
         <Panel defaultSize={showLivePreview ? 50 : 100} minSize={30}>
-          <div className="h-full overflow-y-auto p-6">
+          <div className="h-full overflow-y-auto p-6 pb-24 md:pb-6">
         {isLoading ? (
           <div className="flex min-h-[400px] items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -388,6 +396,36 @@ export default function AdminDashboard() {
           </>
         )}
       </PanelGroup>
+
+      {/* Mobile sticky bottom navigation */}
+      {isMobile && portfolio && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 border-t bg-card/95 backdrop-blur-lg px-4 py-3 shadow-elev md:hidden">
+          <div className="flex items-center justify-between gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowPreview(true)}
+              className="flex-1"
+            >
+              <Eye className="mr-2 h-4 w-4" />
+              Preview
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => publishMutation.mutate()}
+              disabled={publishMutation.isPending}
+              className="flex-1"
+            >
+              {publishMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="mr-2 h-4 w-4" />
+              )}
+              Publish
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Preview Modal */}
       {showPreview && portfolio && (
