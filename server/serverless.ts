@@ -33,7 +33,7 @@ app.use(
   session({
     store: new PgSession({
       pool: pgPool,
-      createTableIfMissing: true,
+      tableName: "session",
     }),
     secret: process.env.SESSION_SECRET || "dev-secret-change-in-production",
     resave: false,
