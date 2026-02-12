@@ -1,16 +1,13 @@
-// Serverless entry point for Vercel
+// Serverless entry point for Vercel - JWT-based auth
 import express, { type Request, Response, NextFunction } from "express";
-import session from "express-session";
-import connectPgSimple from "connect-pg-simple";
-import passport from "passport";
+import cookieParser from "cookie-parser";
 import { registerRoutes } from "./routes";
 import { createServer } from "http";
-import { setupPassport } from "./middleware/auth";
-import pg from "pg";
 
 const app = express();
 const httpServer = createServer(app);
 
+// Body parsing
 app.use(
   express.json({
     verify: (req: any, _res, buf) => {
@@ -18,39 +15,10 @@ app.use(
     },
   }),
 );
-
 app.use(express.urlencoded({ extended: false }));
 
-// PostgreSQL session store for Vercel
-const PgSession = connectPgSimple(session);
-const pgPool = new pg.Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : undefined,
-});
-
-// Session configuration
-app.use(
-  session({
-    store: new PgSession({
-      pool: pgPool,
-      tableName: "session",
-    }),
-    secret: process.env.SESSION_SECRET || "dev-secret-change-in-production",
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: process.env.NODE_ENV === "production",
-      httpOnly: true,
-      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-      sameSite: "lax",
-    },
-  })
-);
-
-// Initialize Passport
-setupPassport();
-app.use(passport.initialize());
-app.use(passport.session());
+// Cookie parsing for JWT tokens
+app.use(cookieParser());
 
 // Register routes
 registerRoutes(httpServer, app);
