@@ -46,12 +46,28 @@ async function buildAll() {
   ];
   const externals = allDeps.filter((dep) => !allowlist.includes(dep));
 
+  // Build main server
   await esbuild({
     entryPoints: ["server/index.ts"],
     platform: "node",
     bundle: true,
     format: "cjs",
     outfile: "dist/index.cjs",
+    define: {
+      "process.env.NODE_ENV": '"production"',
+    },
+    minify: true,
+    external: externals,
+    logLevel: "info",
+  });
+
+  // Build serverless entry for Vercel
+  await esbuild({
+    entryPoints: ["server/serverless.ts"],
+    platform: "node",
+    bundle: true,
+    format: "cjs",
+    outfile: "dist/serverless.cjs",
     define: {
       "process.env.NODE_ENV": '"production"',
     },

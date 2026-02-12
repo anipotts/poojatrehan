@@ -1,38 +1,51 @@
-import { type User, type InsertUser } from "@shared/schema";
-import { randomUUID } from "crypto";
+import { drizzle } from "drizzle-orm/node-postgres";
+import pkg from "pg";
+const { Pool } = pkg;
+import * as schema from "@shared/schema";
+import { eq } from "drizzle-orm";
 
-// modify the interface with any CRUD methods
-// you might need
+// Initialize PostgreSQL connection
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
 
+// Initialize Drizzle ORM
+export const db = drizzle(pool, { schema });
+
+// Storage interface for database operations
 export interface IStorage {
-  getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  // Admin operations
+  getAdminById(id: string): Promise<schema.Admin | undefined>;
+  getAdminByUsername(username: string): Promise<schema.Admin | undefined>;
+  createAdmin(admin: schema.InsertAdmin): Promise<schema.Admin>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-
-  constructor() {
-    this.users = new Map();
+class PostgresStorage implements IStorage {
+  async getAdminById(id: string): Promise<schema.Admin | undefined> {
+    const [admin] = await db
+      .select()
+      .from(schema.admins)
+      .where(eq(schema.admins.id, id))
+      .limit(1);
+    return admin;
   }
 
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+  async getAdminByUsername(username: string): Promise<schema.Admin | undefined> {
+    const [admin] = await db
+      .select()
+      .from(schema.admins)
+      .where(eq(schema.admins.username, username))
+      .limit(1);
+    return admin;
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+  async createAdmin(insertAdmin: schema.InsertAdmin): Promise<schema.Admin> {
+    const [admin] = await db
+      .insert(schema.admins)
+      .values(insertAdmin)
+      .returning();
+    return admin;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new PostgresStorage();
