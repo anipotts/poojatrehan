@@ -165,8 +165,8 @@ export default function AdminDashboard() {
   const isLoading = portfolioLoading;
 
   return (
-    <div className="surface min-h-dvh">
-      <div className="relative min-h-dvh grain">
+    <div className="surface h-dvh flex flex-col overflow-hidden">
+      <div className="relative flex flex-1 flex-col grain overflow-hidden">
         {/* Top bar */}
         <header className="sticky top-0 z-50 border-b bg-card/80 backdrop-blur">
         <div className="flex h-16 items-center justify-between px-6">
@@ -326,14 +326,29 @@ export default function AdminDashboard() {
       )}
 
       {/* Main content */}
-      <PanelGroup direction="horizontal" className="flex-1">
+      <PanelGroup direction="horizontal" className="flex-1 min-h-0">
         <Panel defaultSize={compareMode ? 50 : (showLivePreview ? 50 : 100)} minSize={30}>
           <div
-            className="h-full overflow-y-auto p-6 pb-24 md:pb-6"
+            className={`h-full overflow-y-auto ${
+              !isMobile && compareMode && portfolio && publishedPortfolio ? '' : 'p-6 pb-24 md:pb-6'
+            }`}
             style={{ marginTop: isMobile && compareMode ? '48px' : '0' }}
           >
-        {/* Mobile Compare Mode: Show selected preview */}
-        {isMobile && compareMode && portfolio && publishedPortfolio ? (
+        {/* Desktop Compare Mode: Show Live (published) preview */}
+        {!isMobile && compareMode && portfolio && publishedPortfolio ? (
+          <div className="h-full overflow-y-auto">
+            <div className="sticky top-0 z-10 bg-card/95 backdrop-blur px-4 py-2 border-b">
+              <div className="inline-flex items-center gap-2 rounded-full border bg-green-500/10 text-green-700 border-green-500/20 px-3 py-1 text-xs font-medium">
+                <Check className="h-3 w-3" /> Live (Published)
+              </div>
+            </div>
+            <LivePreviewPane
+              portfolio={publishedPortfolio}
+              activeTab={activeTab}
+              onSectionClick={setActiveTab}
+            />
+          </div>
+        ) : isMobile && compareMode && portfolio && publishedPortfolio ? (
           compareMobileTab === 'live' ? (
             <LivePreviewPane
               portfolio={publishedPortfolio}
@@ -449,29 +464,11 @@ export default function AdminDashboard() {
           </div>
         </Panel>
 
-        {/* Compare Mode: Two Preview Panels (Desktop only) */}
+        {/* Compare Mode: Draft Panel (Desktop only) */}
         {compareMode && portfolio && publishedPortfolio && !isMobile && (
           <>
-            {/* Live Site Panel */}
             <PanelResizeHandle className="w-1 bg-border hover:bg-primary/50 transition-colors" />
-            <Panel defaultSize={25} minSize={15}>
-              <div className="h-full overflow-y-auto">
-                <div className="sticky top-0 z-10 bg-card/95 backdrop-blur px-4 py-2 border-b">
-                  <div className="inline-flex items-center gap-2 rounded-full border bg-green-500/10 text-green-700 border-green-500/20 px-3 py-1 text-xs font-medium">
-                    <Check className="h-3 w-3" /> Live
-                  </div>
-                </div>
-                <LivePreviewPane
-                  portfolio={publishedPortfolio}
-                  activeTab={activeTab}
-                  onSectionClick={setActiveTab}
-                />
-              </div>
-            </Panel>
-
-            {/* Draft Site Panel */}
-            <PanelResizeHandle className="w-1 bg-border hover:bg-primary/50 transition-colors" />
-            <Panel defaultSize={25} minSize={15}>
+            <Panel defaultSize={50} minSize={30}>
               <div className="h-full overflow-y-auto">
                 <div className="sticky top-0 z-10 bg-card/95 backdrop-blur px-4 py-2 border-b">
                   <div className="inline-flex items-center gap-2 rounded-full border bg-yellow-500/10 text-yellow-700 border-yellow-500/20 px-3 py-1 text-xs font-medium">
