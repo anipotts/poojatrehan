@@ -1,10 +1,12 @@
 // Serverless entry point for Vercel
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
+import connectPgSimple from "connect-pg-simple";
 import passport from "passport";
 import { registerRoutes } from "./routes";
 import { createServer } from "http";
 import { setupPassport } from "./middleware/auth";
+import pg from "pg";
 
 const app = express();
 const httpServer = createServer(app);
@@ -19,9 +21,20 @@ app.use(
 
 app.use(express.urlencoded({ extended: false }));
 
+// PostgreSQL session store for Vercel
+const PgSession = connectPgSimple(session);
+const pgPool = new pg.Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : undefined,
+});
+
 // Session configuration
 app.use(
   session({
+    store: new PgSession({
+      pool: pgPool,
+      createTableIfMissing: true,
+    }),
     secret: process.env.SESSION_SECRET || "dev-secret-change-in-production",
     resave: false,
     saveUninitialized: false,
