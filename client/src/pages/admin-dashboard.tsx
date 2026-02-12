@@ -15,6 +15,9 @@ import {
   PanelLeftClose,
   PanelLeft,
   GitCompare,
+  ExternalLink,
+  Check,
+  Edit,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -38,6 +41,7 @@ export default function AdminDashboard() {
   const [showLivePreview, setShowLivePreview] = useState(false); // Start hidden on mobile
   const [compareMode, setCompareMode] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [compareMobileTab, setCompareMobileTab] = useState<'live' | 'draft'>('draft');
   const queryClient = useQueryClient();
 
   // Show live preview by default on desktop, detect mobile state
@@ -241,6 +245,22 @@ export default function AdminDashboard() {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => window.open('/', '_blank')}
+                  >
+                    <ExternalLink className="h-4 w-4 md:mr-2" />
+                    <span className="hidden md:inline">Live Site</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Open live portfolio in new tab</p>
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
                     size="sm"
                     onClick={() => publishMutation.mutate()}
                     disabled={publishMutation.isPending || !portfolio}
@@ -277,11 +297,57 @@ export default function AdminDashboard() {
         </div>
       </header>
 
+      {/* Mobile Compare Mode: Tabs */}
+      {isMobile && compareMode && portfolio && publishedPortfolio && (
+        <div className="fixed top-16 left-0 right-0 z-40 bg-card border-b md:hidden">
+          <div className="flex">
+            <button
+              onClick={() => setCompareMobileTab('live')}
+              className={`flex-1 px-4 py-3 text-sm font-medium transition ${
+                compareMobileTab === 'live'
+                  ? 'bg-green-500/10 text-green-700 border-b-2 border-green-500'
+                  : 'text-muted-foreground'
+              }`}
+            >
+              <Check className="inline mr-1 h-3 w-3" /> Live
+            </button>
+            <button
+              onClick={() => setCompareMobileTab('draft')}
+              className={`flex-1 px-4 py-3 text-sm font-medium transition ${
+                compareMobileTab === 'draft'
+                  ? 'bg-yellow-500/10 text-yellow-700 border-b-2 border-yellow-500'
+                  : 'text-muted-foreground'
+              }`}
+            >
+              <Edit className="inline mr-1 h-3 w-3" /> Draft
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Main content */}
       <PanelGroup direction="horizontal" className="flex-1">
-        <Panel defaultSize={showLivePreview ? 50 : 100} minSize={30}>
-          <div className="h-full overflow-y-auto p-6 pb-24 md:pb-6">
-        {isLoading ? (
+        <Panel defaultSize={compareMode ? 50 : (showLivePreview ? 50 : 100)} minSize={30}>
+          <div
+            className="h-full overflow-y-auto p-6 pb-24 md:pb-6"
+            style={{ marginTop: isMobile && compareMode ? '48px' : '0' }}
+          >
+        {/* Mobile Compare Mode: Show selected preview */}
+        {isMobile && compareMode && portfolio && publishedPortfolio ? (
+          compareMobileTab === 'live' ? (
+            <LivePreviewPane
+              portfolio={publishedPortfolio}
+              activeTab={activeTab}
+              onSectionClick={setActiveTab}
+            />
+          ) : (
+            <LivePreviewPane
+              portfolio={portfolio}
+              activeTab={activeTab}
+              onSectionClick={setActiveTab}
+            />
+          )
+        ) : isLoading ? (
           <div className="flex min-h-[400px] items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
@@ -383,7 +449,47 @@ export default function AdminDashboard() {
           </div>
         </Panel>
 
-        {showLivePreview && portfolio && (
+        {/* Compare Mode: Two Preview Panels (Desktop only) */}
+        {compareMode && portfolio && publishedPortfolio && !isMobile && (
+          <>
+            {/* Live Site Panel */}
+            <PanelResizeHandle className="w-1 bg-border hover:bg-primary/50 transition-colors" />
+            <Panel defaultSize={25} minSize={15}>
+              <div className="h-full overflow-y-auto">
+                <div className="sticky top-0 z-10 bg-card/95 backdrop-blur px-4 py-2 border-b">
+                  <div className="inline-flex items-center gap-2 rounded-full border bg-green-500/10 text-green-700 border-green-500/20 px-3 py-1 text-xs font-medium">
+                    <Check className="h-3 w-3" /> Live
+                  </div>
+                </div>
+                <LivePreviewPane
+                  portfolio={publishedPortfolio}
+                  activeTab={activeTab}
+                  onSectionClick={setActiveTab}
+                />
+              </div>
+            </Panel>
+
+            {/* Draft Site Panel */}
+            <PanelResizeHandle className="w-1 bg-border hover:bg-primary/50 transition-colors" />
+            <Panel defaultSize={25} minSize={15}>
+              <div className="h-full overflow-y-auto">
+                <div className="sticky top-0 z-10 bg-card/95 backdrop-blur px-4 py-2 border-b">
+                  <div className="inline-flex items-center gap-2 rounded-full border bg-yellow-500/10 text-yellow-700 border-yellow-500/20 px-3 py-1 text-xs font-medium">
+                    <Edit className="h-3 w-3" /> Draft
+                  </div>
+                </div>
+                <LivePreviewPane
+                  portfolio={portfolio}
+                  activeTab={activeTab}
+                  onSectionClick={setActiveTab}
+                />
+              </div>
+            </Panel>
+          </>
+        )}
+
+        {/* Normal Preview (no compare) */}
+        {!compareMode && showLivePreview && portfolio && (
           <>
             <PanelResizeHandle className="w-1 bg-border hover:bg-primary/50 transition-colors" />
             <Panel defaultSize={50} minSize={30}>

@@ -1,9 +1,13 @@
 import type { Express } from "express";
 import type { Server } from "http";
 import multer from "multer";
-import { requireAuth, login as jwtLogin } from "./middleware/jwt-auth";
+import { requireAuth, login as jwtLogin, generateToken } from "./middleware/jwt-auth";
 import * as portfolioService from "./services/portfolio";
 import * as blobService from "./services/blob";
+import { MAGIC_WORDS } from "./config/magic-words";
+import { rateLimitMiddleware } from "./middleware/rate-limit";
+import { logLoginAttempt } from "./utils/login-logger";
+import { storage } from "./storage";
 
 // Configure multer for file uploads (memory storage)
 const upload = multer({ storage: multer.memoryStorage() });
@@ -40,6 +44,58 @@ export function registerRoutes(
       return res.json({
         message: "Login successful",
         user: result.user,
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/auth/magic-login", rateLimitMiddleware, async (req, res, next) => {
+    try {
+      const { magicWord } = req.body;
+      const ip = req.ip || req.socket.remoteAddress || 'unknown';
+
+      if (!magicWord) {
+        return res.status(400).json({ message: "Magic word required" });
+      }
+
+      // Validate magic word
+      const isValid = MAGIC_WORDS.includes(magicWord.toLowerCase().trim());
+
+      if (!isValid) {
+        logLoginAttempt(ip, magicWord, false);
+        return res.status(401).json({ message: "Sorry, you're not allowed" });
+      }
+
+      // Get the admin user (assuming there's only one admin for this personal portfolio)
+      // You may need to adjust this based on your actual storage implementation
+      const admin = await storage.getAdminByUsername("admin"); // Adjust username as needed
+
+      if (!admin) {
+        logLoginAttempt(ip, magicWord, false);
+        return res.status(500).json({ message: "Admin user not found" });
+      }
+
+      // Generate JWT token
+      const user = {
+        id: admin.id,
+        username: admin.username,
+      };
+      const token = generateToken(user);
+
+      // Set JWT token as httpOnly cookie
+      res.cookie("auth_token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      });
+
+      logLoginAttempt(ip, magicWord, true);
+
+      return res.json({
+        message: "Welcome!",
+        user,
       });
     } catch (error) {
       next(error);
