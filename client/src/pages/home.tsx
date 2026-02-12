@@ -17,6 +17,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 
+import headshot from "@assets/D7C54CF4-2162-4EF9-AB69-EDCBD55776BE_1770858143120.PNG";
+
 type Experience = {
   company: string;
   role: string;
@@ -204,12 +206,12 @@ export default function Home() {
         staggerChildren: 0.08,
       },
     },
-  } as const;
+  };
 
   const item = {
     hidden: { opacity: 0, y: reduceMotion ? 0 : 10 },
     show: { opacity: 1, y: 0 },
-  } as const;
+  };
 
   return (
     <div className="surface min-h-dvh">
@@ -286,73 +288,78 @@ export default function Home() {
             >
               <motion.div
                 variants={item}
-                className="inline-flex items-center gap-2 rounded-full border bg-card/70 px-3 py-2 text-xs text-muted-foreground shadow-elev-sm backdrop-blur"
-                data-testid="badge-status"
+                className="mt-8 grid grid-cols-1 items-start gap-12 lg:grid-cols-[1fr_400px]"
               >
-                <span
-                  className="inline-flex h-2 w-2 rounded-full bg-emerald-500"
-                  aria-hidden="true"
-                />
-                Senior Economics student at NYU • Pursuing accounting roles
-              </motion.div>
+                <div>
+                  <motion.div
+                    variants={item}
+                    className="inline-flex items-center gap-2 rounded-full border bg-card/70 px-3 py-2 text-xs text-muted-foreground shadow-elev-sm backdrop-blur"
+                    data-testid="badge-status"
+                  >
+                    <span
+                      className="inline-flex h-2 w-2 rounded-full bg-emerald-500"
+                      aria-hidden="true"
+                    />
+                    Senior Economics student at NYU • Pursuing accounting roles
+                  </motion.div>
 
-              <motion.h1
-                variants={item}
-                className="mt-5 text-balance font-serif text-4xl font-semibold tracking-[-0.03em] md:text-6xl"
-                data-testid="text-hero-title"
-              >
-                A precise, modern portfolio — built for trust.
-              </motion.h1>
+                  <motion.h1
+                    variants={item}
+                    className="mt-5 text-balance font-serif text-4xl font-semibold tracking-[-0.03em] md:text-6xl"
+                    data-testid="text-hero-title"
+                  >
+                    A precise, modern portfolio — built for trust.
+                  </motion.h1>
 
-              <motion.p
-                variants={item}
-                className="mt-4 max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground md:text-lg"
-                data-testid="text-hero-subtitle"
-              >
-                I’m Pooja Trehan (she/her), a senior Economics student at New York
-                University. I’m focused on transitioning into the accounting industry
-                through hands-on internship experience, clear communication, and
-                detail-first work.
-              </motion.p>
+                  <motion.p
+                    variants={item}
+                    className="mt-4 max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground md:text-lg"
+                    data-testid="text-hero-subtitle"
+                  >
+                    I’m Pooja Trehan (she/her), a senior Economics student at New York
+                    University. I’m focused on transitioning into the accounting industry
+                    through hands-on internship experience, clear communication, and
+                    detail-first work.
+                  </motion.p>
 
-              <motion.div variants={item} className="mt-7 flex flex-wrap items-center gap-2">
-                <Anchor href="mailto:pt2293@nyu.edu">
-                  <Mail className="h-4 w-4" aria-hidden="true" />
-                  pt2293@nyu.edu
-                </Anchor>
-                <div
-                  className="inline-flex items-center gap-2 rounded-full border bg-card px-3 py-2 text-sm text-foreground/90 shadow-elev-sm"
-                  data-testid="text-location"
-                >
-                  <MapPin
-                    className="h-4 w-4 text-muted-foreground"
-                    aria-hidden="true"
-                  />
-                  New York, NY
+                  <motion.div variants={item} className="mt-7 flex flex-wrap items-center gap-2">
+                    <Anchor href="mailto:pt2293@nyu.edu">
+                      <Mail className="h-4 w-4" aria-hidden="true" />
+                      pt2293@nyu.edu
+                    </Anchor>
+                    <div
+                      className="inline-flex items-center gap-2 rounded-full border bg-card px-3 py-2 text-sm text-foreground/90 shadow-elev-sm"
+                      data-testid="text-location"
+                    >
+                      <MapPin
+                        className="h-4 w-4 text-muted-foreground"
+                        aria-hidden="true"
+                      />
+                      New York, NY
+                    </div>
+                    <a
+                      href="#experience"
+                      className="focus-ring inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-elev-sm transition hover:-translate-y-0.5 hover:shadow-elev"
+                      data-testid="button-view-experience"
+                    >
+                      View experience
+                      <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                    </a>
+                  </motion.div>
                 </div>
-                <a
-                  href="#experience"
-                  className="focus-ring inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-elev-sm transition hover:-translate-y-0.5 hover:shadow-elev"
-                  data-testid="button-view-experience"
+
+                <motion.div
+                  variants={item}
+                  className="relative mx-auto w-full max-w-sm lg:mx-0 lg:max-w-none"
                 >
-                  View experience
-                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                </a>
-                <Button
-                  variant="outline"
-                  className="rounded-full"
-                  data-testid="button-download-resume"
-                  onClick={() => {
-                    window.open(
-                      "https://example.com",
-                      "_blank",
-                      "noopener,noreferrer",
-                    );
-                  }}
-                >
-                  <Download className="h-4 w-4" aria-hidden="true" />
-                  Resume
-                </Button>
+                  <div className="aspect-[4/5] overflow-hidden rounded-[2rem] border bg-muted shadow-elev">
+                    <img
+                      src={headshot}
+                      alt="Pooja Trehan"
+                      className="h-full w-full object-cover grayscale transition duration-700 hover:grayscale-0"
+                    />
+                  </div>
+                </motion.div>
               </motion.div>
 
               <motion.div
