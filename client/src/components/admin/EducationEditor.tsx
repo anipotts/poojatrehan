@@ -9,12 +9,16 @@ import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { educationApi, type Portfolio, type Education } from "@/lib/api";
 import { toast } from "sonner";
+import DiffBadge from "./DiffBadge";
+import { getEducationDiffStatus } from "@/lib/diff-utils";
 
 interface EducationEditorProps {
   portfolio: Portfolio;
+  publishedPortfolio?: Portfolio | null;
+  compareMode?: boolean;
 }
 
-export default function EducationEditor({ portfolio }: EducationEditorProps) {
+export default function EducationEditor({ portfolio, publishedPortfolio, compareMode }: EducationEditorProps) {
   const queryClient = useQueryClient();
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [editingEdu, setEditingEdu] = useState<Education | null>(null);
@@ -28,9 +32,9 @@ export default function EducationEditor({ portfolio }: EducationEditorProps) {
   });
 
   return (
-    <Card className="p-6">
+    <Card className="shadow-elev-sm border bg-card/70 p-6 backdrop-blur">
       <div className="mb-6 flex items-center justify-between">
-        <h2 className="font-serif text-2xl font-semibold">Education</h2>
+        <h2 className="font-serif text-2xl font-semibold tracking-[-0.02em]">Education</h2>
         <Button onClick={() => setIsAddingNew(true)}>
           <Plus className="mr-2 h-4 w-4" />
           Add Education
@@ -38,16 +42,23 @@ export default function EducationEditor({ portfolio }: EducationEditorProps) {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        {portfolio.education.map((edu) => (
-          <Card key={edu.id} className="p-4">
-            <div>
-              <p className="font-semibold">{edu.school}</p>
-              <p className="text-sm text-muted-foreground">{edu.degree}</p>
-              <p className="mt-2 text-xs text-muted-foreground">{edu.dates}</p>
-              {edu.details && (
-                <p className="mt-2 text-sm">{edu.details}</p>
-              )}
+        {portfolio.education.map((edu) => {
+          const diffStatus = compareMode && publishedPortfolio
+            ? getEducationDiffStatus(edu, publishedPortfolio.education)
+            : null;
+
+          return (
+          <Card key={edu.id} className="shadow-elev-sm border bg-card/70 p-5 backdrop-blur transition hover:-translate-y-0.5 hover:shadow-elev">
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="text-sm font-semibold">{edu.school}</p>
+              {diffStatus && <DiffBadge status={diffStatus} />}
             </div>
+            <p className="mt-1 text-sm text-muted-foreground">{edu.degree}</p>
+            <p className="mt-3 text-xs text-muted-foreground">{edu.dates}</p>
+            {edu.details ? (
+              <p className="mt-3 text-sm text-foreground/80">{edu.details}</p>
+            ) : null}
+
             <div className="mt-4 flex gap-2">
               <Button variant="outline" size="sm" onClick={() => setEditingEdu(edu)}>
                 Edit
@@ -62,7 +73,8 @@ export default function EducationEditor({ portfolio }: EducationEditorProps) {
               </Button>
             </div>
           </Card>
-        ))}
+          );
+        })}
 
         {portfolio.education.length === 0 && (
           <p className="col-span-2 py-8 text-center text-sm text-muted-foreground">

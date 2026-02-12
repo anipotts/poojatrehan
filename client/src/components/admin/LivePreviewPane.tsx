@@ -1,5 +1,4 @@
-import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState, useRef } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import {
   ArrowRight,
@@ -16,14 +15,19 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
-import { portfolioApi } from "@/lib/api";
+import type { Portfolio } from "@/lib/api";
+
+interface LivePreviewPaneProps {
+  portfolio: Portfolio;
+  onSectionClick?: (section: string) => void;
+  highlightedSection?: string | null;
+  activeTab?: string;
+}
 
 function useTheme() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
 
   useEffect(() => {
-    // Default to light theme unless system prefers dark
     const stored = window.localStorage.getItem("theme");
     const preferred =
       stored === "light" || stored === "dark"
@@ -53,7 +57,6 @@ function Anchor({ href, children }: { href: string; children: React.ReactNode })
     <a
       href={href}
       className="focus-ring inline-flex items-center gap-2 rounded-full border bg-card px-3 py-2 text-sm text-foreground/90 shadow-elev-sm transition hover:-translate-y-0.5 hover:shadow-elev"
-      data-testid={`link-${href.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`}
     >
       {children}
     </a>
@@ -71,64 +74,35 @@ function SectionHeading({
 }) {
   return (
     <div className="mb-6">
-      <p
-        className="text-xs font-medium uppercase tracking-[0.24em] text-muted-foreground"
-        data-testid={`text-eyebrow-${id}`}
-      >
+      <p className="text-xs font-medium uppercase tracking-[0.24em] text-muted-foreground">
         {eyebrow}
       </p>
-      <h2
-        className="mt-2 text-balance font-serif text-2xl font-semibold tracking-[-0.02em] md:text-3xl"
-        data-testid={`text-heading-${id}`}
-      >
+      <h2 className="mt-2 text-balance font-serif text-2xl font-semibold tracking-[-0.02em] md:text-3xl">
         {title}
       </h2>
     </div>
   );
 }
 
-function LoadingSkeleton() {
-  return (
-    <div className="surface min-h-dvh">
-      <div className="relative overflow-hidden">
-        <div className="relative grain">
-          <header className="mx-auto w-full max-w-6xl px-5 pt-5 md:px-8 md:pt-8">
-            <nav className="flex items-center justify-between gap-3">
-              <Skeleton className="h-12 w-40" />
-              <Skeleton className="h-10 w-10 rounded-full" />
-            </nav>
-          </header>
-
-          <main className="mx-auto w-full max-w-6xl px-5 pb-20 md:px-8">
-            <section className="pt-10 md:pt-16">
-              <div className="mt-8 grid grid-cols-1 items-start gap-12 lg:grid-cols-[1fr_400px]">
-                <div>
-                  <Skeleton className="h-8 w-64 mb-5" />
-                  <Skeleton className="h-16 w-full mb-4" />
-                  <Skeleton className="h-24 w-full" />
-                </div>
-                <Skeleton className="aspect-[4/5] w-full rounded-[2rem]" />
-              </div>
-            </section>
-          </main>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export default function Home() {
+export default function LivePreviewPane({
+  portfolio,
+  onSectionClick,
+  highlightedSection,
+  activeTab,
+}: LivePreviewPaneProps) {
   const reduceMotion = useReducedMotion();
   const { theme, toggle } = useTheme();
+  const sectionRefs = useRef<{ [key: string]: HTMLElement | null }>({});
 
-  // Fetch portfolio data
-  const { data: portfolio, isLoading, error } = useQuery({
-    queryKey: ["portfolio", "published"],
-    queryFn: portfolioApi.getPublished,
-    staleTime: 0, // Always fetch fresh data to show admin updates immediately
-    refetchOnWindowFocus: true, // Refetch when tab is focused
-    refetchInterval: 30000, // Check for updates every 30 seconds
-  });
+  // Auto-scroll when activeTab changes
+  useEffect(() => {
+    if (activeTab && sectionRefs.current[activeTab]) {
+      sectionRefs.current[activeTab]?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  }, [activeTab]);
 
   // Apply dynamic theme colors
   useEffect(() => {
@@ -142,23 +116,6 @@ export default function Home() {
       }
     }
   }, [portfolio?.themeColors]);
-
-  if (isLoading) {
-    return <LoadingSkeleton />;
-  }
-
-  if (error || !portfolio) {
-    return (
-      <div className="surface flex min-h-dvh items-center justify-center">
-        <Card className="p-6 max-w-md text-center">
-          <p className="text-lg font-semibold mb-2">Unable to load portfolio</p>
-          <p className="text-sm text-muted-foreground">
-            Please try refreshing the page or contact support.
-          </p>
-        </Card>
-      </div>
-    );
-  }
 
   const container = {
     hidden: { opacity: 0, y: reduceMotion ? 0 : 12 },
@@ -177,9 +134,15 @@ export default function Home() {
     show: { opacity: 1, y: 0 },
   };
 
+  const handleSectionClick = (section: string) => {
+    if (onSectionClick) {
+      onSectionClick(section);
+    }
+  };
+
   return (
-    <div className="surface min-h-dvh">
-      <div className="relative overflow-hidden">
+    <div className="surface h-full overflow-y-auto">
+      <div className="relative">
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute -top-28 left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-gradient-to-b from-primary/20 to-transparent blur-3xl" />
         </div>
@@ -187,50 +150,20 @@ export default function Home() {
         <div className="relative grain">
           <header className="mx-auto w-full max-w-6xl px-5 pt-5 md:px-8 md:pt-8">
             <nav className="flex items-center justify-between gap-3">
-              <a
-                href="#top"
-                className="focus-ring inline-flex items-center gap-2 rounded-full border bg-card px-3 py-2 shadow-elev-sm"
-                data-testid="link-home"
-              >
-                <span
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary"
-                  data-testid="badge-mark"
-                >
+              <div className="focus-ring inline-flex items-center gap-2 rounded-full border bg-card px-3 py-2 shadow-elev-sm">
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <BadgeCheck className="h-4 w-4" aria-hidden="true" />
                 </span>
                 <span className="text-sm font-semibold tracking-[-0.01em]">
                   {portfolio.profileName}
                 </span>
-              </a>
+              </div>
 
               <div className="flex items-center gap-2">
-                <a
-                  href="#experience"
-                  className="hidden rounded-full px-3 py-2 text-sm text-muted-foreground transition hover:text-foreground md:inline-flex"
-                  data-testid="link-nav-experience"
-                >
-                  Experience
-                </a>
-                <a
-                  href="#education"
-                  className="hidden rounded-full px-3 py-2 text-sm text-muted-foreground transition hover:text-foreground md:inline-flex"
-                  data-testid="link-nav-education"
-                >
-                  Education
-                </a>
-                <a
-                  href="#skills"
-                  className="hidden rounded-full px-3 py-2 text-sm text-muted-foreground transition hover:text-foreground md:inline-flex"
-                  data-testid="link-nav-skills"
-                >
-                  Skills
-                </a>
-
                 <Button
                   variant="outline"
                   className="rounded-full bg-card/70 backdrop-blur"
                   onClick={toggle}
-                  data-testid="button-toggle-theme"
                 >
                   {theme === "dark" ? (
                     <Sun className="h-4 w-4" aria-hidden="true" />
@@ -243,12 +176,16 @@ export default function Home() {
             </nav>
           </header>
 
-          <main id="top" className="mx-auto w-full max-w-6xl px-5 pb-20 md:px-8">
+          <main className="mx-auto w-full max-w-6xl px-5 pb-20 md:px-8">
             <motion.section
-              className="pt-10 md:pt-16"
+              className={`pt-10 md:pt-16 cursor-pointer rounded-lg transition-all ${
+                activeTab === "profile" ? "ring-2 ring-primary/50 bg-primary/5 p-4" : ""
+              }`}
               variants={container}
               initial="hidden"
               animate="show"
+              onClick={() => handleSectionClick("profile")}
+              ref={(el) => { sectionRefs.current["profile"] = el; }}
             >
               <motion.div
                 variants={item}
@@ -258,12 +195,8 @@ export default function Home() {
                   <motion.div
                     variants={item}
                     className="inline-flex items-center gap-2 rounded-full border bg-card/70 px-3 py-2 text-xs text-muted-foreground shadow-elev-sm backdrop-blur"
-                    data-testid="badge-status"
                   >
-                    <span
-                      className="inline-flex h-2 w-2 rounded-full bg-emerald-500"
-                      aria-hidden="true"
-                    />
+                    <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500" aria-hidden="true" />
                     {portfolio.heroStatus}
                   </motion.div>
 
@@ -274,10 +207,7 @@ export default function Home() {
                       className="h-12 w-12 rounded-lg border-2 transition-colors"
                       style={{ borderColor: 'hsl(var(--primary))' }}
                     />
-                    <h1
-                      className="text-balance font-serif text-4xl font-semibold tracking-[-0.03em] md:text-6xl"
-                      data-testid="text-hero-title"
-                    >
+                    <h1 className="text-balance font-serif text-4xl font-semibold tracking-[-0.03em] md:text-6xl">
                       {portfolio.heroTitle}
                     </h1>
                   </motion.div>
@@ -285,7 +215,6 @@ export default function Home() {
                   <motion.p
                     variants={item}
                     className="mt-4 max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground md:text-lg"
-                    data-testid="text-hero-subtitle"
                   >
                     {portfolio.heroSubtitle}
                   </motion.p>
@@ -295,20 +224,13 @@ export default function Home() {
                       <Mail className="h-4 w-4" aria-hidden="true" />
                       {portfolio.profileEmail}
                     </Anchor>
-                    <div
-                      className="inline-flex items-center gap-2 rounded-full border bg-card px-3 py-2 text-sm text-foreground/90 shadow-elev-sm"
-                      data-testid="text-location"
-                    >
-                      <MapPin
-                        className="h-4 w-4 text-muted-foreground"
-                        aria-hidden="true"
-                      />
+                    <div className="inline-flex items-center gap-2 rounded-full border bg-card px-3 py-2 text-sm text-foreground/90 shadow-elev-sm">
+                      <MapPin className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
                       {portfolio.profileLocation}
                     </div>
                     <a
                       href="#experience"
                       className="focus-ring inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-elev-sm transition hover:-translate-y-0.5 hover:shadow-elev"
-                      data-testid="button-view-experience"
                     >
                       View experience
                       <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -316,10 +238,7 @@ export default function Home() {
                   </motion.div>
                 </div>
 
-                <motion.div
-                  variants={item}
-                  className="relative mx-auto w-full max-w-sm lg:mx-0 lg:max-w-none"
-                >
+                <motion.div variants={item} className="relative mx-auto w-full max-w-sm lg:mx-0 lg:max-w-none">
                   <div className="aspect-[4/5] overflow-hidden rounded-[2rem] border bg-muted shadow-elev">
                     {portfolio.profileImageUrl ? (
                       <img
@@ -336,79 +255,43 @@ export default function Home() {
                 </motion.div>
               </motion.div>
 
-              <motion.div
-                variants={item}
-                className="mt-10 grid grid-cols-1 gap-4 md:grid-cols-3"
-              >
-                <Card
-                  className="shadow-elev-sm border bg-card/70 p-5 backdrop-blur"
-                  data-testid="card-highlights-1"
-                >
+              <motion.div variants={item} className="mt-10 grid grid-cols-1 gap-4 md:grid-cols-3">
+                <Card className="shadow-elev-sm border bg-card/70 p-5 backdrop-blur">
                   <div className="flex items-start gap-3">
-                    <span
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary"
-                      data-testid="icon-highlight-1"
-                    >
+                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
                       <Briefcase className="h-5 w-5" aria-hidden="true" />
                     </span>
                     <div>
-                      <p className="text-sm font-semibold" data-testid="text-highlight-title-1">
-                        Accounting internships
-                      </p>
-                      <p
-                        className="mt-1 text-sm text-muted-foreground"
-                        data-testid="text-highlight-desc-1"
-                      >
+                      <p className="text-sm font-semibold">Accounting internships</p>
+                      <p className="mt-1 text-sm text-muted-foreground">
                         Practical support across reporting, records, and reconciliations.
                       </p>
                     </div>
                   </div>
                 </Card>
 
-                <Card
-                  className="shadow-elev-sm border bg-card/70 p-5 backdrop-blur"
-                  data-testid="card-highlights-2"
-                >
+                <Card className="shadow-elev-sm border bg-card/70 p-5 backdrop-blur">
                   <div className="flex items-start gap-3">
-                    <span
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary"
-                      data-testid="icon-highlight-2"
-                    >
+                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
                       <GraduationCap className="h-5 w-5" aria-hidden="true" />
                     </span>
                     <div>
-                      <p className="text-sm font-semibold" data-testid="text-highlight-title-2">
-                        Economics @ NYU
-                      </p>
-                      <p
-                        className="mt-1 text-sm text-muted-foreground"
-                        data-testid="text-highlight-desc-2"
-                      >
+                      <p className="text-sm font-semibold">Economics @ NYU</p>
+                      <p className="mt-1 text-sm text-muted-foreground">
                         Quantitative thinking with a disciplined, structured approach.
                       </p>
                     </div>
                   </div>
                 </Card>
 
-                <Card
-                  className="shadow-elev-sm border bg-card/70 p-5 backdrop-blur"
-                  data-testid="card-highlights-3"
-                >
+                <Card className="shadow-elev-sm border bg-card/70 p-5 backdrop-blur">
                   <div className="flex items-start gap-3">
-                    <span
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary"
-                      data-testid="icon-highlight-3"
-                    >
+                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
                       <BookOpen className="h-5 w-5" aria-hidden="true" />
                     </span>
                     <div>
-                      <p className="text-sm font-semibold" data-testid="text-highlight-title-3">
-                        Clear communication
-                      </p>
-                      <p
-                        className="mt-1 text-sm text-muted-foreground"
-                        data-testid="text-highlight-desc-3"
-                      >
+                      <p className="text-sm font-semibold">Clear communication</p>
+                      <p className="mt-1 text-sm text-muted-foreground">
                         Structured updates, polished writing, and calm execution.
                       </p>
                     </div>
@@ -417,7 +300,14 @@ export default function Home() {
               </motion.div>
             </motion.section>
 
-            <section id="experience" className="pt-16 md:pt-20">
+            <section
+              id="experience"
+              className={`pt-16 md:pt-20 cursor-pointer rounded-lg transition-all ${
+                activeTab === "experience" ? "ring-2 ring-primary/50 bg-primary/5 p-4" : ""
+              }`}
+              onClick={() => handleSectionClick("experience")}
+              ref={(el) => { sectionRefs.current["experience"] = el; }}
+            >
               <SectionHeading eyebrow="Experience" title="Internships & roles" id="experience" />
 
               <div className="grid grid-cols-1 gap-4">
@@ -425,26 +315,19 @@ export default function Home() {
                   <Card
                     key={exp.id}
                     className="shadow-elev-sm border bg-card/70 p-5 backdrop-blur transition hover:-translate-y-0.5 hover:shadow-elev"
-                    data-testid={`card-experience-${idx}`}
                   >
                     <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                       <div>
-                        <p className="text-base font-semibold" data-testid={`text-exp-role-${idx}`}>
+                        <p className="text-base font-semibold">
                           {exp.role}
                           <span className="text-muted-foreground"> • </span>
                           <span className="text-foreground/85">{exp.company}</span>
                         </p>
-                        <p
-                          className="mt-1 text-sm text-muted-foreground"
-                          data-testid={`text-exp-meta-${idx}`}
-                        >
+                        <p className="mt-1 text-sm text-muted-foreground">
                           {exp.type} • {exp.location}
                         </p>
                       </div>
-                      <div
-                        className="inline-flex items-center gap-2 rounded-full border bg-background/40 px-3 py-1.5 text-xs text-muted-foreground"
-                        data-testid={`text-exp-dates-${idx}`}
-                      >
+                      <div className="inline-flex items-center gap-2 rounded-full border bg-background/40 px-3 py-1.5 text-xs text-muted-foreground">
                         {exp.startDate} — {exp.endDate}
                       </div>
                     </div>
@@ -453,15 +336,8 @@ export default function Home() {
 
                     <ul className="space-y-2 text-sm text-foreground/85">
                       {exp.bullets.map((b, bIdx) => (
-                        <li
-                          key={bIdx}
-                          className="flex gap-2"
-                          data-testid={`text-exp-bullet-${idx}-${bIdx}`}
-                        >
-                          <span
-                            className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary/60"
-                            aria-hidden="true"
-                          />
+                        <li key={bIdx} className="flex gap-2">
+                          <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary/60" aria-hidden="true" />
                           <span>{b}</span>
                         </li>
                       ))}
@@ -471,7 +347,14 @@ export default function Home() {
               </div>
             </section>
 
-            <section id="education" className="pt-16 md:pt-20">
+            <section
+              id="education"
+              className={`pt-16 md:pt-20 cursor-pointer rounded-lg transition-all ${
+                activeTab === "education" ? "ring-2 ring-primary/50 bg-primary/5 p-4" : ""
+              }`}
+              onClick={() => handleSectionClick("education")}
+              ref={(el) => { sectionRefs.current["education"] = el; }}
+            >
               <SectionHeading eyebrow="Education" title="Where I study" id="education" />
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -479,46 +362,35 @@ export default function Home() {
                   <Card
                     key={ed.id}
                     className="shadow-elev-sm border bg-card/70 p-5 backdrop-blur"
-                    data-testid={`card-education-${idx}`}
                   >
-                    <p className="text-sm font-semibold" data-testid={`text-edu-school-${idx}`}>
-                      {ed.school}
-                    </p>
-                    <p className="mt-1 text-sm text-muted-foreground" data-testid={`text-edu-degree-${idx}`}>
-                      {ed.degree}
-                    </p>
-                    <p className="mt-3 text-xs text-muted-foreground" data-testid={`text-edu-dates-${idx}`}>
-                      {ed.dates}
-                    </p>
+                    <p className="text-sm font-semibold">{ed.school}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">{ed.degree}</p>
+                    <p className="mt-3 text-xs text-muted-foreground">{ed.dates}</p>
                     {ed.details ? (
-                      <p
-                        className="mt-3 text-sm text-foreground/80"
-                        data-testid={`text-edu-details-${idx}`}
-                      >
-                        {ed.details}
-                      </p>
+                      <p className="mt-3 text-sm text-foreground/80">{ed.details}</p>
                     ) : null}
                   </Card>
                 ))}
               </div>
             </section>
 
-            <section id="skills" className="pt-16 md:pt-20">
+            <section
+              id="skills"
+              className={`pt-16 md:pt-20 cursor-pointer rounded-lg transition-all ${
+                activeTab === "skills" ? "ring-2 ring-primary/50 bg-primary/5 p-4" : ""
+              }`}
+              onClick={() => handleSectionClick("skills")}
+              ref={(el) => { sectionRefs.current["skills"] = el; }}
+            >
               <SectionHeading eyebrow="Skills" title="Strengths I bring" id="skills" />
 
-              <Card
-                className="shadow-elev-sm border bg-card/70 p-5 backdrop-blur"
-                data-testid="card-skills"
-              >
+              <Card className="shadow-elev-sm border bg-card/70 p-5 backdrop-blur">
                 <div className="flex flex-wrap gap-2">
                   {portfolio.skills.map((s) => (
                     <Badge
                       key={s.id}
                       variant="secondary"
                       className="rounded-full border border-border/70 bg-background/60 px-3 py-1.5 text-sm text-foreground/85"
-                      data-testid={`badge-skill-${s.name
-                        .toLowerCase()
-                        .replace(/[^a-z0-9]+/g, "-")}`}
                     >
                       {s.name}
                     </Badge>
@@ -528,26 +400,17 @@ export default function Home() {
             </section>
 
             <section className="pt-16 md:pt-20">
-              <Card
-                className="relative overflow-hidden border bg-card/70 p-6 shadow-elev backdrop-blur"
-                data-testid="card-cta"
-              >
+              <Card className="relative overflow-hidden border bg-card/70 p-6 shadow-elev backdrop-blur">
                 <div className="pointer-events-none absolute inset-0">
                   <div className="absolute -right-24 -top-24 h-64 w-64 rounded-full bg-primary/15 blur-3xl" />
                 </div>
 
                 <div className="relative flex flex-col items-start gap-4 md:flex-row md:items-center md:justify-between">
                   <div>
-                    <p
-                      className="font-serif text-2xl font-semibold tracking-[-0.02em]"
-                      data-testid="text-cta-title"
-                    >
+                    <p className="font-serif text-2xl font-semibold tracking-[-0.02em]">
                       Let's connect.
                     </p>
-                    <p
-                      className="mt-2 max-w-xl text-sm text-muted-foreground"
-                      data-testid="text-cta-desc"
-                    >
+                    <p className="mt-2 max-w-xl text-sm text-muted-foreground">
                       If you're hiring for entry-level accounting roles or internships, I'd
                       love to share more context and learn about your team.
                     </p>
@@ -556,7 +419,6 @@ export default function Home() {
                   <a
                     href={`mailto:${portfolio.profileEmail}`}
                     className="focus-ring inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-elev-sm transition hover:-translate-y-0.5 hover:shadow-elev"
-                    data-testid="button-email"
                   >
                     Email me
                     <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -567,7 +429,7 @@ export default function Home() {
 
             <footer className="pt-14">
               <div className="flex flex-col items-start justify-between gap-4 border-t py-8 md:flex-row md:items-center">
-                <p className="text-sm text-muted-foreground" data-testid="text-footer">
+                <p className="text-sm text-muted-foreground">
                   © {new Date().getFullYear()} {portfolio.profileName} • Built with care
                 </p>
                 <div className="flex flex-wrap items-center gap-2">
@@ -575,10 +437,9 @@ export default function Home() {
                     <Mail className="h-4 w-4" aria-hidden="true" />
                     Email
                   </Anchor>
-                  <Anchor href="#top">
-                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                    Back to top
-                  </Anchor>
+                  <span className="text-xs text-muted-foreground">
+                    Live Preview (Draft)
+                  </span>
                 </div>
               </div>
             </footer>

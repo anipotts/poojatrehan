@@ -36,9 +36,9 @@ export default function ThemeEditor({ portfolio }: ThemeEditorProps) {
   });
 
   return (
-    <Card className="p-6">
+    <Card className="shadow-elev-sm border bg-card/70 p-6 backdrop-blur">
       <div className="mb-6 flex items-center justify-between">
-        <h2 className="font-serif text-2xl font-semibold">Theme Customization</h2>
+        <h2 className="font-serif text-2xl font-semibold tracking-[-0.02em]">Theme Customization</h2>
         <Button
           variant="outline"
           size="sm"

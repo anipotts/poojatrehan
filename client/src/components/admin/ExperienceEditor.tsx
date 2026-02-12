@@ -9,12 +9,16 @@ import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { experienceApi, type Portfolio, type Experience } from "@/lib/api";
 import { toast } from "sonner";
+import DiffBadge from "./DiffBadge";
+import { getExperienceDiffStatus } from "@/lib/diff-utils";
 
 interface ExperienceEditorProps {
   portfolio: Portfolio;
+  publishedPortfolio?: Portfolio | null;
+  compareMode?: boolean;
 }
 
-export default function ExperienceEditor({ portfolio }: ExperienceEditorProps) {
+export default function ExperienceEditor({ portfolio, publishedPortfolio, compareMode }: ExperienceEditorProps) {
   const queryClient = useQueryClient();
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [editingExp, setEditingExp] = useState<Experience | null>(null);
@@ -28,9 +32,9 @@ export default function ExperienceEditor({ portfolio }: ExperienceEditorProps) {
   });
 
   return (
-    <Card className="p-6">
+    <Card className="shadow-elev-sm border bg-card/70 p-6 backdrop-blur">
       <div className="mb-6 flex items-center justify-between">
-        <h2 className="font-serif text-2xl font-semibold">Experience</h2>
+        <h2 className="font-serif text-2xl font-semibold tracking-[-0.02em]">Experience</h2>
         <Button onClick={() => setIsAddingNew(true)}>
           <Plus className="mr-2 h-4 w-4" />
           Add Experience
@@ -38,42 +42,63 @@ export default function ExperienceEditor({ portfolio }: ExperienceEditorProps) {
       </div>
 
       <div className="space-y-4">
-        {portfolio.experiences.map((exp) => (
-          <Card key={exp.id} className="p-4">
-            <div className="flex items-start justify-between">
+        {portfolio.experiences.map((exp) => {
+          const diffStatus = compareMode && publishedPortfolio
+            ? getExperienceDiffStatus(exp, publishedPortfolio.experiences)
+            : null;
+
+          return (
+          <Card key={exp.id} className="shadow-elev-sm border bg-card/70 p-5 backdrop-blur transition hover:-translate-y-0.5 hover:shadow-elev">
+            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
               <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <GripVertical className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="font-semibold">{exp.role}</p>
-                    <p className="text-sm text-muted-foreground">{exp.company}</p>
-                  </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-base font-semibold">
+                    {exp.role}
+                    <span className="text-muted-foreground"> • </span>
+                    <span className="text-foreground/85">{exp.company}</span>
+                  </p>
+                  {diffStatus && <DiffBadge status={diffStatus} />}
                 </div>
-                <div className="mt-2 space-y-1 text-sm text-muted-foreground">
-                  <p>{exp.type} • {exp.location}</p>
-                  <p>{exp.startDate} — {exp.endDate}</p>
-                </div>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {exp.type} • {exp.location}
+                </p>
               </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setEditingExp(exp)}
-                >
-                  Edit
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => deleteMutation.mutate(exp.id)}
-                  disabled={deleteMutation.isPending}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+              <div className="inline-flex items-center gap-2 rounded-full border bg-background/40 px-3 py-1.5 text-xs text-muted-foreground">
+                {exp.startDate} — {exp.endDate}
               </div>
             </div>
+
+            <div className="my-4 h-px bg-border" />
+
+            <ul className="space-y-2 text-sm text-foreground/85">
+              {exp.bullets.map((b, bIdx) => (
+                <li key={bIdx} className="flex gap-2">
+                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary/60" />
+                  <span>{b}</span>
+                </li>
+              ))}
+            </ul>
+
+            <div className="mt-4 flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setEditingExp(exp)}
+              >
+                Edit
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => deleteMutation.mutate(exp.id)}
+                disabled={deleteMutation.isPending}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
           </Card>
-        ))}
+          );
+        })}
 
         {portfolio.experiences.length === 0 && (
           <p className="py-8 text-center text-sm text-muted-foreground">

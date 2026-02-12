@@ -1,9 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import {
-  Sparkles,
   User,
   Briefcase,
   GraduationCap,
@@ -13,10 +12,15 @@ import {
   Send,
   LogOut,
   Loader2,
+  PanelLeftClose,
+  PanelLeft,
+  GitCompare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import { authApi, portfolioApi } from "@/lib/api";
 import { toast } from "sonner";
 import ProfileEditor from "@/components/admin/ProfileEditor";
@@ -25,12 +29,69 @@ import EducationEditor from "@/components/admin/EducationEditor";
 import SkillsEditor from "@/components/admin/SkillsEditor";
 import ThemeEditor from "@/components/admin/ThemeEditor";
 import PreviewModal from "@/components/admin/PreviewModal";
+import LivePreviewPane from "@/components/admin/LivePreviewPane";
 
 export default function AdminDashboard() {
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("profile");
   const [showPreview, setShowPreview] = useState(false);
+  const [showLivePreview, setShowLivePreview] = useState(false); // Start hidden on mobile
+  const [compareMode, setCompareMode] = useState(false);
   const queryClient = useQueryClient();
+
+  // Show live preview by default on desktop
+  useEffect(() => {
+    const isDesktop = window.matchMedia('(min-width: 768px)').matches;
+    setShowLivePreview(isDesktop);
+  }, []);
+
+  // Animation variants
+  const container = {
+    hidden: { opacity: 0, y: 12 },
+    show: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.55,
+        staggerChildren: 0.08,
+      },
+    },
+  };
+
+  const item = {
+    hidden: { opacity: 0, y: 10 },
+    show: { opacity: 1, y: 0 },
+  };
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+      const modKey = isMac ? e.metaKey : e.ctrlKey;
+
+      // Cmd/Ctrl + P: Toggle preview
+      if (modKey && e.key === 'p' && !e.shiftKey) {
+        e.preventDefault();
+        setShowLivePreview((prev) => !prev);
+        toast.info(showLivePreview ? 'Preview hidden' : 'Preview shown');
+      }
+
+      // Cmd/Ctrl + Shift + C: Toggle compare mode
+      if (modKey && e.shiftKey && e.key === 'c') {
+        e.preventDefault();
+        setCompareMode((prev) => !prev);
+        toast.info(compareMode ? 'Compare mode off' : 'Compare mode on');
+      }
+
+      // Cmd/Ctrl + S: Already handled in ProfileEditor, but prevent default
+      if (modKey && e.key === 's') {
+        e.preventDefault();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showLivePreview, compareMode]);
 
   // Check auth
   const { data: authData, isLoading: authLoading } = useQuery({
@@ -44,6 +105,13 @@ export default function AdminDashboard() {
     queryKey: ["portfolio", "draft"],
     queryFn: portfolioApi.getDraft,
     enabled: !!authData,
+  });
+
+  // Get published portfolio for comparison
+  const { data: publishedPortfolio } = useQuery({
+    queryKey: ["portfolio", "published"],
+    queryFn: portfolioApi.getPublished,
+    enabled: !!authData && compareMode,
   });
 
   // Logout mutation
@@ -86,11 +154,17 @@ export default function AdminDashboard() {
 
   return (
     <div className="surface min-h-dvh">
-      {/* Top bar */}
-      <header className="sticky top-0 z-50 border-b bg-card/80 backdrop-blur">
+      <div className="relative min-h-dvh grain">
+        {/* Top bar */}
+        <header className="sticky top-0 z-50 border-b bg-card/80 backdrop-blur">
         <div className="flex h-16 items-center justify-between px-6">
           <div className="flex items-center gap-3">
-            <Sparkles className="h-5 w-5 text-primary" />
+            <img
+              src="/favicon.svg"
+              alt="PT"
+              className="h-8 w-8 rounded border transition-colors"
+              style={{ borderColor: 'hsl(var(--primary))' }}
+            />
             <div>
               <h1 className="font-semibold">Admin Dashboard</h1>
               <p className="text-xs text-muted-foreground">
@@ -99,41 +173,106 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowPreview(true)}
-              disabled={!portfolio}
-            >
-              <Eye className="mr-2 h-4 w-4" />
-              Preview
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => publishMutation.mutate()}
-              disabled={publishMutation.isPending || !portfolio}
-            >
-              {publishMutation.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="mr-2 h-4 w-4" />
-              )}
-              Publish
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => logoutMutation.mutate()}
-            >
-              <LogOut className="h-4 w-4" />
-            </Button>
-          </div>
+          <TooltipProvider>
+            <div className="flex items-center gap-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowLivePreview(!showLivePreview)}
+                    disabled={!portfolio}
+                  >
+                    {showLivePreview ? (
+                      <PanelLeftClose className="mr-2 h-4 w-4" />
+                    ) : (
+                      <PanelLeft className="mr-2 h-4 w-4" />
+                    )}
+                    <span className="hidden md:inline">{showLivePreview ? "Hide" : "Show"} Preview</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Toggle live preview (Cmd/Ctrl+P)</p>
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowPreview(true)}
+                    disabled={!portfolio}
+                  >
+                    <Eye className="h-4 w-4 md:mr-2" />
+                    <span className="hidden md:inline">Full Preview</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Open full-screen preview modal</p>
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={compareMode ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setCompareMode(!compareMode)}
+                    disabled={!portfolio}
+                  >
+                    <GitCompare className="h-4 w-4 md:mr-2" />
+                    <span className="hidden md:inline">Compare</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Compare draft with published (Cmd/Ctrl+Shift+C)</p>
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="sm"
+                    onClick={() => publishMutation.mutate()}
+                    disabled={publishMutation.isPending || !portfolio}
+                  >
+                    {publishMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 md:mr-2 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4 md:mr-2" />
+                    )}
+                    <span className="hidden md:inline">Publish</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Publish draft changes to live site</p>
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => logoutMutation.mutate()}
+                  >
+                    <LogOut className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Log out</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </TooltipProvider>
         </div>
       </header>
 
       {/* Main content */}
-      <div className="mx-auto max-w-7xl p-6">
+      <PanelGroup direction="horizontal" className="flex-1">
+        <Panel defaultSize={showLivePreview ? 50 : 100} minSize={30}>
+          <div className="h-full overflow-y-auto p-6">
         {isLoading ? (
           <div className="flex min-h-[400px] items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -146,57 +285,109 @@ export default function AdminDashboard() {
           </Card>
         ) : (
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
+            variants={container}
+            initial="hidden"
+            animate="show"
           >
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="mb-6">
-                <TabsTrigger value="profile">
+              <TabsList className="surface mb-6 border shadow-elev-sm p-1">
+                <TabsTrigger
+                  value="profile"
+                  className="data-[state=active]:shadow-elev data-[state=active]:bg-card/70 data-[state=active]:backdrop-blur transition"
+                >
                   <User className="mr-2 h-4 w-4" />
                   Profile
                 </TabsTrigger>
-                <TabsTrigger value="experience">
+                <TabsTrigger
+                  value="experience"
+                  className="data-[state=active]:shadow-elev data-[state=active]:bg-card/70 data-[state=active]:backdrop-blur transition"
+                >
                   <Briefcase className="mr-2 h-4 w-4" />
                   Experience
                 </TabsTrigger>
-                <TabsTrigger value="education">
+                <TabsTrigger
+                  value="education"
+                  className="data-[state=active]:shadow-elev data-[state=active]:bg-card/70 data-[state=active]:backdrop-blur transition"
+                >
                   <GraduationCap className="mr-2 h-4 w-4" />
                   Education
                 </TabsTrigger>
-                <TabsTrigger value="skills">
+                <TabsTrigger
+                  value="skills"
+                  className="data-[state=active]:shadow-elev data-[state=active]:bg-card/70 data-[state=active]:backdrop-blur transition"
+                >
                   <Lightbulb className="mr-2 h-4 w-4" />
                   Skills
                 </TabsTrigger>
-                <TabsTrigger value="theme">
+                <TabsTrigger
+                  value="theme"
+                  className="data-[state=active]:shadow-elev data-[state=active]:bg-card/70 data-[state=active]:backdrop-blur transition"
+                >
                   <Palette className="mr-2 h-4 w-4" />
                   Theme
                 </TabsTrigger>
               </TabsList>
 
               <TabsContent value="profile">
-                <ProfileEditor portfolio={portfolio} />
+                <motion.div variants={item}>
+                  <ProfileEditor portfolio={portfolio} />
+                </motion.div>
               </TabsContent>
 
               <TabsContent value="experience">
-                <ExperienceEditor portfolio={portfolio} />
+                <motion.div variants={item}>
+                  <ExperienceEditor
+                    portfolio={portfolio}
+                    publishedPortfolio={publishedPortfolio}
+                    compareMode={compareMode}
+                  />
+                </motion.div>
               </TabsContent>
 
               <TabsContent value="education">
-                <EducationEditor portfolio={portfolio} />
+                <motion.div variants={item}>
+                  <EducationEditor
+                    portfolio={portfolio}
+                    publishedPortfolio={publishedPortfolio}
+                    compareMode={compareMode}
+                  />
+                </motion.div>
               </TabsContent>
 
               <TabsContent value="skills">
-                <SkillsEditor portfolio={portfolio} />
+                <motion.div variants={item}>
+                  <SkillsEditor
+                    portfolio={portfolio}
+                    publishedPortfolio={publishedPortfolio}
+                    compareMode={compareMode}
+                  />
+                </motion.div>
               </TabsContent>
 
               <TabsContent value="theme">
-                <ThemeEditor portfolio={portfolio} />
+                <motion.div variants={item}>
+                  <ThemeEditor portfolio={portfolio} />
+                </motion.div>
               </TabsContent>
             </Tabs>
           </motion.div>
         )}
-      </div>
+          </div>
+        </Panel>
+
+        {showLivePreview && portfolio && (
+          <>
+            <PanelResizeHandle className="w-1 bg-border hover:bg-primary/50 transition-colors" />
+            <Panel defaultSize={50} minSize={30}>
+              <LivePreviewPane
+                portfolio={portfolio}
+                onSectionClick={(section) => setActiveTab(section)}
+                activeTab={activeTab}
+              />
+            </Panel>
+          </>
+        )}
+      </PanelGroup>
 
       {/* Preview Modal */}
       {showPreview && portfolio && (
@@ -205,6 +396,7 @@ export default function AdminDashboard() {
           onClose={() => setShowPreview(false)}
         />
       )}
+      </div>
     </div>
   );
 }
