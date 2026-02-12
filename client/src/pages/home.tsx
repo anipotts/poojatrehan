@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "framer-motion";
 import {
   ArrowRight,
   BadgeCheck,
   BookOpen,
   Briefcase,
-  Download,
   GraduationCap,
   Mail,
   MapPin,
@@ -16,34 +16,14 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-
-import headshot from "@assets/D7C54CF4-2162-4EF9-AB69-EDCBD55776BE_1770858143120.PNG";
-
-type Experience = {
-  company: string;
-  role: string;
-  type: string;
-  location: string;
-  start: string;
-  end: string;
-  bullets: string[];
-};
-
-type Education = {
-  school: string;
-  degree: string;
-  dates: string;
-  details?: string;
-};
-
-type Skill = {
-  name: string;
-};
+import { Skeleton } from "@/components/ui/skeleton";
+import { portfolioApi } from "@/lib/api";
 
 function useTheme() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
 
   useEffect(() => {
+    // Default to light theme unless system prefers dark
     const stored = window.localStorage.getItem("theme");
     const preferred =
       stored === "light" || stored === "dark"
@@ -107,93 +87,76 @@ function SectionHeading({
   );
 }
 
+function LoadingSkeleton() {
+  return (
+    <div className="surface min-h-dvh">
+      <div className="relative overflow-hidden">
+        <div className="relative grain">
+          <header className="mx-auto w-full max-w-6xl px-5 pt-5 md:px-8 md:pt-8">
+            <nav className="flex items-center justify-between gap-3">
+              <Skeleton className="h-12 w-40" />
+              <Skeleton className="h-10 w-10 rounded-full" />
+            </nav>
+          </header>
+
+          <main className="mx-auto w-full max-w-6xl px-5 pb-20 md:px-8">
+            <section className="pt-10 md:pt-16">
+              <div className="mt-8 grid grid-cols-1 items-start gap-12 lg:grid-cols-[1fr_400px]">
+                <div>
+                  <Skeleton className="h-8 w-64 mb-5" />
+                  <Skeleton className="h-16 w-full mb-4" />
+                  <Skeleton className="h-24 w-full" />
+                </div>
+                <Skeleton className="aspect-[4/5] w-full rounded-[2rem]" />
+              </div>
+            </section>
+          </main>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   const reduceMotion = useReducedMotion();
   const { theme, toggle } = useTheme();
 
-  const experiences: Experience[] = useMemo(
-    () => [
-      {
-        company: "Accounting Solutions of NY",
-        role: "Accounting Intern",
-        type: "Internship",
-        location: "New York, NY (On-site)",
-        start: "May 2025",
-        end: "Aug 2025",
-        bullets: [
-          "Supported month-end tasks and reconciliations with a strong focus on accuracy.",
-          "Assisted with documentation and organized financial records for quick review.",
-        ],
-      },
-      {
-        company: "Astatine Investment Partners",
-        role: "Finance Intern",
-        type: "Internship",
-        location: "Connecticut (On-site)",
-        start: "May 2024",
-        end: "Aug 2024",
-        bullets: [
-          "Built cash flow and DCF analysis to support investment research and discussions.",
-          "Synthesized findings into clear, decision-ready summaries.",
-        ],
-      },
-      {
-        company: "Brave",
-        role: "Marketing Representative",
-        type: "Part-time",
-        location: "New York, NY",
-        start: "Jan 2024",
-        end: "May 2024",
-        bullets: [
-          "Strengthened communication through outreach and event-style engagement.",
-          "Practiced project planning and consistent follow-through.",
-        ],
-      },
-      {
-        company: "KK MEHTA LTD",
-        role: "Accounting Intern",
-        type: "Full-time",
-        location: "New York, NY (On-site)",
-        start: "May 2023",
-        end: "Aug 2023",
-        bullets: [
-          "Supported financial reporting workflows and maintained organized records.",
-          "Assisted with asset tracking and basic reporting tasks.",
-        ],
-      },
-    ],
-    [],
-  );
+  // Fetch portfolio data
+  const { data: portfolio, isLoading, error } = useQuery({
+    queryKey: ["portfolio", "published"],
+    queryFn: portfolioApi.getPublished,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
 
-  const education: Education[] = useMemo(
-    () => [
-      {
-        school: "New York University",
-        degree: "B.A. in Economics",
-        dates: "Sep 2022 — May 2026",
-      },
-      {
-        school: "Jericho Senior High School",
-        degree: "High School Diploma",
-        dates: "Sep 2019 — Jun 2022",
-        details: "Activities: Debate, Model UN, Swim",
-      },
-    ],
-    [],
-  );
+  // Apply dynamic theme colors
+  useEffect(() => {
+    if (portfolio?.themeColors) {
+      const root = document.documentElement;
+      if (portfolio.themeColors.primary) {
+        root.style.setProperty("--primary", portfolio.themeColors.primary);
+      }
+      if (portfolio.themeColors.accent) {
+        root.style.setProperty("--accent", portfolio.themeColors.accent);
+      }
+    }
+  }, [portfolio?.themeColors]);
 
-  const skills: Skill[] = useMemo(
-    () => [
-      { name: "Financial Reporting" },
-      { name: "Analytical Skills" },
-      { name: "DCF & Cash Flow Modeling" },
-      { name: "Reconciliation Support" },
-      { name: "Documentation" },
-      { name: "Public Speaking" },
-      { name: "Project Planning" },
-    ],
-    [],
-  );
+  if (isLoading) {
+    return <LoadingSkeleton />;
+  }
+
+  if (error || !portfolio) {
+    return (
+      <div className="surface flex min-h-dvh items-center justify-center">
+        <Card className="p-6 max-w-md text-center">
+          <p className="text-lg font-semibold mb-2">Unable to load portfolio</p>
+          <p className="text-sm text-muted-foreground">
+            Please try refreshing the page or contact support.
+          </p>
+        </Card>
+      </div>
+    );
+  }
 
   const container = {
     hidden: { opacity: 0, y: reduceMotion ? 0 : 12 },
@@ -202,7 +165,6 @@ export default function Home() {
       y: 0,
       transition: {
         duration: 0.55,
-        ease: "easeOut",
         staggerChildren: 0.08,
       },
     },
@@ -235,7 +197,7 @@ export default function Home() {
                   <BadgeCheck className="h-4 w-4" aria-hidden="true" />
                 </span>
                 <span className="text-sm font-semibold tracking-[-0.01em]">
-                  Pooja Trehan
+                  {portfolio.profileName}
                 </span>
               </a>
 
@@ -300,7 +262,7 @@ export default function Home() {
                       className="inline-flex h-2 w-2 rounded-full bg-emerald-500"
                       aria-hidden="true"
                     />
-                    Senior Economics student at NYU • Pursuing accounting roles
+                    {portfolio.heroStatus}
                   </motion.div>
 
                   <motion.h1
@@ -308,7 +270,7 @@ export default function Home() {
                     className="mt-5 text-balance font-serif text-4xl font-semibold tracking-[-0.03em] md:text-6xl"
                     data-testid="text-hero-title"
                   >
-                    A precise, modern portfolio — built for trust.
+                    {portfolio.heroTitle}
                   </motion.h1>
 
                   <motion.p
@@ -316,16 +278,13 @@ export default function Home() {
                     className="mt-4 max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground md:text-lg"
                     data-testid="text-hero-subtitle"
                   >
-                    I’m Pooja Trehan (she/her), a senior Economics student at New York
-                    University. I’m focused on transitioning into the accounting industry
-                    through hands-on internship experience, clear communication, and
-                    detail-first work.
+                    {portfolio.heroSubtitle}
                   </motion.p>
 
                   <motion.div variants={item} className="mt-7 flex flex-wrap items-center gap-2">
-                    <Anchor href="mailto:pt2293@nyu.edu">
+                    <Anchor href={`mailto:${portfolio.profileEmail}`}>
                       <Mail className="h-4 w-4" aria-hidden="true" />
-                      pt2293@nyu.edu
+                      {portfolio.profileEmail}
                     </Anchor>
                     <div
                       className="inline-flex items-center gap-2 rounded-full border bg-card px-3 py-2 text-sm text-foreground/90 shadow-elev-sm"
@@ -335,7 +294,7 @@ export default function Home() {
                         className="h-4 w-4 text-muted-foreground"
                         aria-hidden="true"
                       />
-                      New York, NY
+                      {portfolio.profileLocation}
                     </div>
                     <a
                       href="#experience"
@@ -353,11 +312,17 @@ export default function Home() {
                   className="relative mx-auto w-full max-w-sm lg:mx-0 lg:max-w-none"
                 >
                   <div className="aspect-[4/5] overflow-hidden rounded-[2rem] border bg-muted shadow-elev">
-                    <img
-                      src={headshot}
-                      alt="Pooja Trehan"
-                      className="h-full w-full object-cover grayscale transition duration-700 hover:grayscale-0"
-                    />
+                    {portfolio.profileImageUrl ? (
+                      <img
+                        src={portfolio.profileImageUrl}
+                        alt={portfolio.profileName}
+                        className="h-full w-full object-cover grayscale transition duration-700 hover:grayscale-0"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center bg-muted">
+                        <BadgeCheck className="h-16 w-16 text-muted-foreground/50" />
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               </motion.div>
@@ -447,9 +412,9 @@ export default function Home() {
               <SectionHeading eyebrow="Experience" title="Internships & roles" id="experience" />
 
               <div className="grid grid-cols-1 gap-4">
-                {experiences.map((exp, idx) => (
+                {portfolio.experiences.map((exp, idx) => (
                   <Card
-                    key={`${exp.company}-${idx}`}
+                    key={exp.id}
                     className="shadow-elev-sm border bg-card/70 p-5 backdrop-blur transition hover:-translate-y-0.5 hover:shadow-elev"
                     data-testid={`card-experience-${idx}`}
                   >
@@ -471,7 +436,7 @@ export default function Home() {
                         className="inline-flex items-center gap-2 rounded-full border bg-background/40 px-3 py-1.5 text-xs text-muted-foreground"
                         data-testid={`text-exp-dates-${idx}`}
                       >
-                        {exp.start} — {exp.end}
+                        {exp.startDate} — {exp.endDate}
                       </div>
                     </div>
 
@@ -501,9 +466,9 @@ export default function Home() {
               <SectionHeading eyebrow="Education" title="Where I study" id="education" />
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                {education.map((ed, idx) => (
+                {portfolio.education.map((ed, idx) => (
                   <Card
-                    key={`${ed.school}-${idx}`}
+                    key={ed.id}
                     className="shadow-elev-sm border bg-card/70 p-5 backdrop-blur"
                     data-testid={`card-education-${idx}`}
                   >
@@ -537,9 +502,9 @@ export default function Home() {
                 data-testid="card-skills"
               >
                 <div className="flex flex-wrap gap-2">
-                  {skills.map((s) => (
+                  {portfolio.skills.map((s) => (
                     <Badge
-                      key={s.name}
+                      key={s.id}
                       variant="secondary"
                       className="rounded-full border border-border/70 bg-background/60 px-3 py-1.5 text-sm text-foreground/85"
                       data-testid={`badge-skill-${s.name
@@ -568,19 +533,19 @@ export default function Home() {
                       className="font-serif text-2xl font-semibold tracking-[-0.02em]"
                       data-testid="text-cta-title"
                     >
-                      Let’s connect.
+                      Let's connect.
                     </p>
                     <p
                       className="mt-2 max-w-xl text-sm text-muted-foreground"
                       data-testid="text-cta-desc"
                     >
-                      If you’re hiring for entry-level accounting roles or internships, I’d
+                      If you're hiring for entry-level accounting roles or internships, I'd
                       love to share more context and learn about your team.
                     </p>
                   </div>
 
                   <a
-                    href="mailto:pt2293@nyu.edu"
+                    href={`mailto:${portfolio.profileEmail}`}
                     className="focus-ring inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-elev-sm transition hover:-translate-y-0.5 hover:shadow-elev"
                     data-testid="button-email"
                   >
@@ -594,10 +559,10 @@ export default function Home() {
             <footer className="pt-14">
               <div className="flex flex-col items-start justify-between gap-4 border-t py-8 md:flex-row md:items-center">
                 <p className="text-sm text-muted-foreground" data-testid="text-footer">
-                  © {new Date().getFullYear()} Pooja Trehan • Built with care
+                  © {new Date().getFullYear()} {portfolio.profileName} • Built with care
                 </p>
                 <div className="flex flex-wrap items-center gap-2">
-                  <Anchor href="mailto:pt2293@nyu.edu">
+                  <Anchor href={`mailto:${portfolio.profileEmail}`}>
                     <Mail className="h-4 w-4" aria-hidden="true" />
                     Email
                   </Anchor>
