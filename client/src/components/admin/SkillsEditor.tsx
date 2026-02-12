@@ -7,12 +7,16 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { skillsApi, type Portfolio } from "@/lib/api";
 import { toast } from "sonner";
+import DiffBadge from "./DiffBadge";
+import { getSkillDiffStatus } from "@/lib/diff-utils";
 
 interface SkillsEditorProps {
   portfolio: Portfolio;
+  publishedPortfolio?: Portfolio | null;
+  compareMode?: boolean;
 }
 
-export default function SkillsEditor({ portfolio }: SkillsEditorProps) {
+export default function SkillsEditor({ portfolio, publishedPortfolio, compareMode }: SkillsEditorProps) {
   const queryClient = useQueryClient();
   const [newSkill, setNewSkill] = useState("");
 
@@ -45,8 +49,8 @@ export default function SkillsEditor({ portfolio }: SkillsEditorProps) {
   });
 
   return (
-    <Card className="p-6">
-      <h2 className="mb-6 font-serif text-2xl font-semibold">Skills</h2>
+    <Card className="shadow-elev-sm border bg-card/70 p-6 backdrop-blur">
+      <h2 className="mb-6 font-serif text-2xl font-semibold tracking-[-0.02em]">Skills</h2>
 
       <div className="space-y-6">
         <div>
@@ -78,23 +82,44 @@ export default function SkillsEditor({ portfolio }: SkillsEditorProps) {
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          {portfolio.skills.map((skill) => (
-            <Badge
-              key={skill.id}
-              variant="secondary"
-              className="group relative pr-8 text-sm"
-            >
-              {skill.name}
-              <button
-                onClick={() => deleteMutation.mutate(skill.id)}
-                disabled={deleteMutation.isPending}
-                className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full p-1 opacity-0 transition hover:bg-destructive hover:text-destructive-foreground group-hover:opacity-100"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </Badge>
-          ))}
+        <div className="space-y-3">
+          {compareMode && publishedPortfolio && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <DiffBadge status="published" />
+              <DiffBadge status="modified" />
+              <DiffBadge status="new" />
+            </div>
+          )}
+
+          <div className="flex flex-wrap gap-2">
+            {portfolio.skills.map((skill) => {
+              const diffStatus = compareMode && publishedPortfolio
+                ? getSkillDiffStatus(skill, publishedPortfolio.skills)
+                : null;
+
+              return (
+                <div key={skill.id} className="inline-flex items-center gap-1.5">
+                  <Badge
+                    variant="secondary"
+                    className={`group relative rounded-full border border-border/70 bg-background/60 px-3 py-1.5 pr-8 text-sm text-foreground/85 ${
+                      diffStatus === 'new' ? 'ring-2 ring-blue-500/20' :
+                      diffStatus === 'modified' ? 'ring-2 ring-yellow-500/20' : ''
+                    }`}
+                  >
+                    {skill.name}
+                    <button
+                      onClick={() => deleteMutation.mutate(skill.id)}
+                      disabled={deleteMutation.isPending}
+                      className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full p-1 opacity-0 transition hover:bg-destructive hover:text-destructive-foreground group-hover:opacity-100"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                  {diffStatus && <DiffBadge status={diffStatus} className="text-xs" />}
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {portfolio.skills.length === 0 && (

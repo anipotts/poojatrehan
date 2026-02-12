@@ -159,7 +159,7 @@ export default function ProfileEditor({ portfolio }: ProfileEditorProps) {
         </div>
       </div>
 
-      <Card className="p-6 space-y-6">
+      <Card className="shadow-elev-sm border bg-card/70 p-6 backdrop-blur space-y-6">
         {/* Profile Image */}
         <div>
           <Label>Profile Image</Label>
