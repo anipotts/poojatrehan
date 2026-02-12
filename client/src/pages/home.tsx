@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { motion, useReducedMotion } from "framer-motion";
+import { useLocation } from "wouter";
 import {
   ArrowRight,
   BadgeCheck,
@@ -9,44 +9,15 @@ import {
   GraduationCap,
   Mail,
   MapPin,
-  Moon,
-  Sun,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ScrollArrows } from "@/components/ScrollArrows";
+import { useEasterEgg } from "@/hooks/use-easter-egg";
 import { portfolioApi } from "@/lib/api";
-
-function useTheme() {
-  const [theme, setTheme] = useState<"light" | "dark">("light");
-
-  useEffect(() => {
-    // Default to light theme unless system prefers dark
-    const stored = window.localStorage.getItem("theme");
-    const preferred =
-      stored === "light" || stored === "dark"
-        ? stored
-        : window.matchMedia?.("(prefers-color-scheme: dark)")?.matches
-          ? "dark"
-          : "light";
-
-    setTheme(preferred);
-  }, []);
-
-  useEffect(() => {
-    const root = document.documentElement;
-    if (theme === "dark") root.classList.add("dark");
-    else root.classList.remove("dark");
-    window.localStorage.setItem("theme", theme);
-  }, [theme]);
-
-  return {
-    theme,
-    toggle: () => setTheme((t) => (t === "dark" ? "light" : "dark")),
-  };
-}
 
 function Anchor({ href, children }: { href: string; children: React.ReactNode }) {
   return (
@@ -118,8 +89,12 @@ function LoadingSkeleton() {
 }
 
 export default function Home() {
-  const reduceMotion = useReducedMotion();
-  const { theme, toggle } = useTheme();
+  const [, setLocation] = useLocation();
+
+  // Easter egg: type "zazaqueen" anywhere to navigate to admin
+  useEasterEgg("zazaqueen", () => {
+    setLocation("/admin");
+  });
 
   // Fetch portfolio data
   const { data: portfolio, isLoading, error } = useQuery({
@@ -160,23 +135,6 @@ export default function Home() {
     );
   }
 
-  const container = {
-    hidden: { opacity: 0, y: reduceMotion ? 0 : 12 },
-    show: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.55,
-        staggerChildren: 0.08,
-      },
-    },
-  };
-
-  const item = {
-    hidden: { opacity: 0, y: reduceMotion ? 0 : 10 },
-    show: { opacity: 1, y: 0 },
-  };
-
   return (
     <div className="surface min-h-dvh">
       <div className="relative overflow-hidden">
@@ -192,12 +150,12 @@ export default function Home() {
                 className="focus-ring inline-flex items-center gap-2 rounded-full border bg-card px-3 py-2 shadow-elev-sm"
                 data-testid="link-home"
               >
-                <span
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary"
-                  data-testid="badge-mark"
-                >
-                  <BadgeCheck className="h-4 w-4" aria-hidden="true" />
-                </span>
+                <img
+                  src="/favicon.svg"
+                  alt="PT"
+                  className="h-8 w-8 rounded-lg"
+                  aria-hidden="true"
+                />
                 <span className="text-sm font-semibold tracking-[-0.01em]">
                   {portfolio.profileName}
                 </span>
@@ -225,72 +183,29 @@ export default function Home() {
                 >
                   Skills
                 </a>
-
-                <Button
-                  variant="outline"
-                  className="rounded-full bg-card/70 backdrop-blur"
-                  onClick={toggle}
-                  data-testid="button-toggle-theme"
-                >
-                  {theme === "dark" ? (
-                    <Sun className="h-4 w-4" aria-hidden="true" />
-                  ) : (
-                    <Moon className="h-4 w-4" aria-hidden="true" />
-                  )}
-                  <span className="sr-only">Toggle theme</span>
-                </Button>
               </div>
             </nav>
           </header>
 
           <main id="top" className="mx-auto w-full max-w-6xl px-5 pb-20 md:px-8">
-            <motion.section
-              className="pt-10 md:pt-16"
-              variants={container}
-              initial="hidden"
-              animate="show"
-            >
-              <motion.div
-                variants={item}
-                className="mt-8 grid grid-cols-1 items-start gap-12 lg:grid-cols-[1fr_400px]"
-              >
+            <section className="animate-in pt-10 md:pt-16">
+              <div className="mt-8 grid grid-cols-1 items-start gap-12 lg:grid-cols-[1fr_400px]">
                 <div>
-                  <motion.div
-                    variants={item}
-                    className="inline-flex items-center gap-2 rounded-full border bg-card/70 px-3 py-2 text-xs text-muted-foreground shadow-elev-sm backdrop-blur"
-                    data-testid="badge-status"
+                  <h1
+                    className="animate-item mt-8 text-balance font-serif text-4xl font-semibold tracking-[-0.03em] md:text-6xl"
+                    data-testid="text-hero-title"
                   >
-                    <span
-                      className="inline-flex h-2 w-2 rounded-full bg-emerald-500"
-                      aria-hidden="true"
-                    />
-                    {portfolio.heroStatus}
-                  </motion.div>
+                    {portfolio.heroTitle}
+                  </h1>
 
-                  <motion.div variants={item} className="mt-5 flex items-center gap-3">
-                    <img
-                      src="/favicon.svg"
-                      alt="PT"
-                      className="h-12 w-12 rounded-lg border-2 transition-colors"
-                      style={{ borderColor: 'hsl(var(--primary))' }}
-                    />
-                    <h1
-                      className="text-balance font-serif text-4xl font-semibold tracking-[-0.03em] md:text-6xl"
-                      data-testid="text-hero-title"
-                    >
-                      {portfolio.heroTitle}
-                    </h1>
-                  </motion.div>
-
-                  <motion.p
-                    variants={item}
-                    className="mt-4 max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground md:text-lg"
+                  <p
+                    className="animate-item mt-4 max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground md:text-lg"
                     data-testid="text-hero-subtitle"
                   >
                     {portfolio.heroSubtitle}
-                  </motion.p>
+                  </p>
 
-                  <motion.div variants={item} className="mt-7 flex flex-wrap items-center gap-2">
+                  <div className="animate-item mt-7 flex flex-wrap items-center gap-2">
                     <Anchor href={`mailto:${portfolio.profileEmail}`}>
                       <Mail className="h-4 w-4" aria-hidden="true" />
                       {portfolio.profileEmail}
@@ -313,19 +228,16 @@ export default function Home() {
                       View experience
                       <ArrowRight className="h-4 w-4" aria-hidden="true" />
                     </a>
-                  </motion.div>
+                  </div>
                 </div>
 
-                <motion.div
-                  variants={item}
-                  className="relative mx-auto w-full max-w-sm lg:mx-0 lg:max-w-none"
-                >
+                <div className="animate-item relative mx-auto w-full max-w-sm lg:mx-0 lg:max-w-none">
                   <div className="aspect-[4/5] overflow-hidden rounded-[2rem] border bg-muted shadow-elev">
                     {portfolio.profileImageUrl ? (
                       <img
                         src={portfolio.profileImageUrl}
                         alt={portfolio.profileName}
-                        className="h-full w-full object-cover grayscale transition duration-700 hover:grayscale-0"
+                        className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center bg-muted">
@@ -333,13 +245,10 @@ export default function Home() {
                       </div>
                     )}
                   </div>
-                </motion.div>
-              </motion.div>
+                </div>
+              </div>
 
-              <motion.div
-                variants={item}
-                className="mt-10 grid grid-cols-1 gap-4 md:grid-cols-3"
-              >
+              <div className="animate-item mt-10 grid grid-cols-1 gap-4 md:grid-cols-3">
                 <Card
                   className="shadow-elev-sm border bg-card/70 p-5 backdrop-blur"
                   data-testid="card-highlights-1"
@@ -414,8 +323,8 @@ export default function Home() {
                     </div>
                   </div>
                 </Card>
-              </motion.div>
-            </motion.section>
+              </div>
+            </section>
 
             <section id="experience" className="pt-16 md:pt-20">
               <SectionHeading eyebrow="Experience" title="Internships & roles" id="experience" />
@@ -585,6 +494,7 @@ export default function Home() {
           </main>
         </div>
       </div>
+      <ScrollArrows />
     </div>
   );
 }
