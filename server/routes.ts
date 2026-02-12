@@ -9,7 +9,7 @@ import * as blobService from "./services/blob";
 // Configure multer for file uploads (memory storage)
 const upload = multer({ storage: multer.memoryStorage() });
 
-export async function registerRoutes(
+export function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
