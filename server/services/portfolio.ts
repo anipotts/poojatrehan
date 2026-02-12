@@ -108,10 +108,13 @@ export async function saveDraft(data: Partial<InsertPortfolioContent>) {
       .where(eq(portfolioContent.isDraft, false))
       .limit(1);
 
+    // Exclude id and createdAt to let database generate new ones
+    const { id, createdAt, ...publishedData } = published;
+
     [draft] = await db
       .insert(portfolioContent)
       .values({
-        ...published,
+        ...publishedData,
         isDraft: true,
         ...data,
       })
@@ -150,19 +153,23 @@ export async function publishDraft() {
     .limit(1);
 
   if (published) {
+    // Exclude id when updating to avoid overwriting the published id
+    const { id, createdAt, ...draftData } = draft;
     await db
       .update(portfolioContent)
       .set({
-        ...draft,
+        ...draftData,
         isDraft: false,
         updatedAt: new Date(),
       })
       .where(eq(portfolioContent.id, published.id));
   } else {
+    // Exclude id and createdAt to let database generate new ones
+    const { id, createdAt, ...draftData } = draft;
     await db
       .insert(portfolioContent)
       .values({
-        ...draft,
+        ...draftData,
         isDraft: false,
       });
   }
