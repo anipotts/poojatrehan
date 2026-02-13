@@ -91,6 +91,12 @@ export default function LivePreviewPane({
 }: LivePreviewPaneProps) {
   const { theme, toggle } = useTheme();
   const sectionRefs = useRef<{ [key: string]: HTMLElement | null }>({});
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Scroll to top on mount
+  useEffect(() => {
+    scrollContainerRef.current?.scrollTo(0, 0);
+  }, []);
 
   // Auto-scroll when activeTab changes
   useEffect(() => {
@@ -122,7 +128,7 @@ export default function LivePreviewPane({
   };
 
   return (
-    <div className="surface h-full overflow-y-auto">
+    <div ref={scrollContainerRef} className="surface h-full overflow-y-auto">
       <div className="relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute -top-28 left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-gradient-to-b from-primary/20 to-transparent blur-3xl" />
@@ -192,9 +198,7 @@ export default function LivePreviewPane({
 
           <main id="top" className="mx-auto w-full max-w-6xl px-5 pb-20 md:px-8">
             <section
-              className={`animate-in pt-10 md:pt-16 cursor-pointer rounded-lg transition-all ${
-                activeTab === "profile" ? "ring-2 ring-primary/50 bg-primary/5 p-4" : ""
-              }`}
+              className="animate-in pt-10 md:pt-16"
               onClick={() => handleSectionClick("profile")}
               ref={(el) => { sectionRefs.current["profile"] = el; }}
             >
@@ -291,9 +295,7 @@ export default function LivePreviewPane({
 
             <section
               id="experience"
-              className={`pt-16 md:pt-20 cursor-pointer rounded-lg transition-all ${
-                activeTab === "experience" ? "ring-2 ring-primary/50 bg-primary/5 p-4" : ""
-              }`}
+              className="pt-16 md:pt-20"
               onClick={() => handleSectionClick("experience")}
               ref={(el) => { sectionRefs.current["experience"] = el; }}
             >
@@ -338,9 +340,7 @@ export default function LivePreviewPane({
 
             <section
               id="education"
-              className={`pt-16 md:pt-20 cursor-pointer rounded-lg transition-all ${
-                activeTab === "education" ? "ring-2 ring-primary/50 bg-primary/5 p-4" : ""
-              }`}
+              className="pt-16 md:pt-20"
               onClick={() => handleSectionClick("education")}
               ref={(el) => { sectionRefs.current["education"] = el; }}
             >
@@ -365,9 +365,7 @@ export default function LivePreviewPane({
 
             <section
               id="skills"
-              className={`pt-16 md:pt-20 cursor-pointer rounded-lg transition-all ${
-                activeTab === "skills" ? "ring-2 ring-primary/50 bg-primary/5 p-4" : ""
-              }`}
+              className="pt-16 md:pt-20"
               onClick={() => handleSectionClick("skills")}
               ref={(el) => { sectionRefs.current["skills"] = el; }}
             >

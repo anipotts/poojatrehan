@@ -211,23 +211,6 @@ export default function AdminDashboard() {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowPreview(true)}
-                    disabled={!portfolio}
-                  >
-                    <Eye className="h-4 w-4 md:mr-2" />
-                    <span className="hidden md:inline">Full Preview</span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Open full-screen preview modal</p>
-                </TooltipContent>
-              </Tooltip>
-
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
                     variant={compareMode ? "default" : "outline"}
                     size="sm"
                     onClick={() => setCompareMode(!compareMode)}
@@ -336,10 +319,12 @@ export default function AdminDashboard() {
           >
         {/* Desktop Compare Mode: Show Live (published) preview */}
         {!isMobile && compareMode && portfolio && publishedPortfolio ? (
-          <div className="h-full overflow-y-auto">
-            <div className="sticky top-0 z-10 bg-card/95 backdrop-blur px-4 py-2 border-b">
-              <div className="inline-flex items-center gap-2 rounded-full border bg-green-500/10 text-green-700 border-green-500/20 px-3 py-1 text-xs font-medium">
-                <Check className="h-3 w-3" /> Live (Published)
+          <div className="relative h-full overflow-y-auto">
+            <div className="pointer-events-none sticky top-0 z-20 h-0 overflow-visible">
+              <div className="px-3 pt-3">
+                <div className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full border bg-green-500/10 text-green-700 border-green-500/20 px-2.5 py-1 text-xs font-medium backdrop-blur-sm shadow-sm">
+                  <Check className="h-3 w-3" /> Live
+                </div>
               </div>
             </div>
             <LivePreviewPane
