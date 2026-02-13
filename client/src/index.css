@@ -83,8 +83,6 @@
   --shadow: 0 1px 0 0 hsl(222 32% 12% / 0.05), 0 18px 40px -18px hsl(222 32% 12% / 0.22);
   --shadow-md: 0 1px 0 0 hsl(222 32% 12% / 0.05), 0 26px 60px -26px hsl(222 32% 12% / 0.24);
 
-  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='.14'/%3E%3C/svg%3E");
-
   /* Safe area insets for mobile devices with notches */
   --safe-area-inset-top: env(safe-area-inset-top);
   --safe-area-inset-right: env(safe-area-inset-right);
@@ -133,20 +131,7 @@
   }
 
   .surface {
-    background:
-      radial-gradient(1200px 600px at 10% -10%, hsl(var(--accent)) 0%, transparent 55%),
-      radial-gradient(900px 500px at 90% 0%, hsl(var(--secondary)) 0%, transparent 60%),
-      hsl(var(--background));
-  }
-
-  .grain::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background-image: var(--grain);
-    mix-blend-mode: overlay;
-    opacity: 0.8;
+    background: hsl(var(--background));
   }
 
   .hairline {
