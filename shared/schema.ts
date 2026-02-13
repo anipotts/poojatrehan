@@ -52,6 +52,17 @@ export const portfolioContent = pgTable("portfolio_content", {
     sans?: string;
   }>(),
 
+  // Section visibility toggles
+  sectionVisibility: jsonb("section_visibility").$type<{
+    experience?: boolean;
+    education?: boolean;
+    skills?: boolean;
+    cta?: boolean;
+  }>(),
+
+  // Resume PDF download URL
+  resumeUrl: text("resume_url"),
+
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -73,6 +84,7 @@ export const experiences = pgTable("experiences", {
   startDate: text("start_date").notNull(),
   endDate: text("end_date").notNull(),
   bullets: jsonb("bullets").$type<string[]>().notNull(),
+  logoUrl: text("logo_url"),
   order: integer("order").notNull().default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -92,6 +104,7 @@ export const education = pgTable("education", {
   degree: text("degree").notNull(),
   dates: text("dates").notNull(),
   details: text("details"),
+  courses: jsonb("courses").$type<{ name: string; url?: string }[]>(),
   order: integer("order").notNull().default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -118,18 +131,3 @@ export const selectSkillSchema = createSelectSchema(skills);
 
 export type InsertSkill = z.infer<typeof insertSkillSchema>;
 export type Skill = typeof skills.$inferSelect;
-
-// Legacy users table (can be removed if not needed)
-export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
-});
-
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
-});
-
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;

@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { MonthYearPicker } from "@/components/ui/month-year-picker";
 import { educationApi, type Portfolio, type Education } from "@/lib/api";
 import { toast } from "sonner";
 import DiffBadge from "./DiffBadge";
@@ -59,6 +60,14 @@ export default function EducationEditor({ portfolio, publishedPortfolio, compare
               <p className="mt-3 text-sm text-foreground/80">{edu.details}</p>
             ) : null}
 
+            {edu.courses && edu.courses.length > 0 && (
+              <div className="mt-3">
+                <p className="text-xs font-medium text-muted-foreground">
+                  {edu.courses.length} course{edu.courses.length !== 1 ? "s" : ""}
+                </p>
+              </div>
+            )}
+
             <div className="mt-4 flex gap-2">
               <Button variant="outline" size="sm" onClick={() => setEditingEdu(edu)}>
                 Edit
@@ -103,21 +112,42 @@ interface EducationDialogProps {
   onClose: () => void;
 }
 
+// Parse existing dates like "Sep 2022 — May 2026" into start/end
+const parseDates = (dates: string) => {
+  const parts = dates.split(/\s*[—–-]\s*/);
+  return {
+    startDate: parts[0]?.trim() || "",
+    endDate: parts[1]?.trim() || "",
+  };
+};
+
 function EducationDialog({ education, portfolioId, onClose }: EducationDialogProps) {
   const queryClient = useQueryClient();
+
+  const existingDates = education ? parseDates(education.dates) : { startDate: "", endDate: "" };
+
   const [formData, setFormData] = useState({
     school: education?.school || "",
     degree: education?.degree || "",
-    dates: education?.dates || "",
+    startDate: existingDates.startDate,
+    endDate: existingDates.endDate,
     details: education?.details || "",
+    courses: education?.courses || [] as { name: string; url?: string }[],
   });
 
   const saveMutation = useMutation({
     mutationFn: async () => {
+      const saveData = {
+        school: formData.school,
+        degree: formData.degree,
+        dates: formData.endDate ? `${formData.startDate} — ${formData.endDate}` : formData.startDate,
+        details: formData.details || null,
+        courses: formData.courses.length > 0 ? formData.courses : null,
+      };
       if (education) {
-        return educationApi.update(education.id, formData);
+        return educationApi.update(education.id, saveData);
       } else {
-        return educationApi.create(portfolioId, { ...formData, order: 0 });
+        return educationApi.create(portfolioId, { ...saveData, order: 0 });
       }
     },
     onSuccess: () => {
@@ -151,13 +181,22 @@ function EducationDialog({ education, portfolioId, onClose }: EducationDialogPro
               onChange={(e) => setFormData({ ...formData, degree: e.target.value })}
             />
           </div>
-          <div>
-            <Label>Dates</Label>
-            <Input
-              value={formData.dates}
-              onChange={(e) => setFormData({ ...formData, dates: e.target.value })}
-              placeholder="e.g., Sep 2022 — May 2026"
-            />
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <Label>Start Date</Label>
+              <MonthYearPicker
+                value={formData.startDate}
+                onChange={(val) => setFormData({ ...formData, startDate: val })}
+              />
+            </div>
+            <div>
+              <Label>End Date</Label>
+              <MonthYearPicker
+                value={formData.endDate}
+                onChange={(val) => setFormData({ ...formData, endDate: val })}
+                allowPresent
+              />
+            </div>
           </div>
           <div>
             <Label>Additional Details (Optional)</Label>
@@ -167,6 +206,63 @@ function EducationDialog({ education, portfolioId, onClose }: EducationDialogPro
               placeholder="Activities, honors, etc."
               rows={3}
             />
+          </div>
+
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <Label>Relevant Coursework (Optional)</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setFormData({
+                  ...formData,
+                  courses: [...formData.courses, { name: "" }],
+                })}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Add Course
+              </Button>
+            </div>
+            <div className="space-y-2">
+              {formData.courses.map((course, idx) => (
+                <div key={idx} className="flex gap-2">
+                  <Input
+                    value={course.name}
+                    onChange={(e) => {
+                      const updated = [...formData.courses];
+                      updated[idx] = { ...updated[idx], name: e.target.value };
+                      setFormData({ ...formData, courses: updated });
+                    }}
+                    placeholder="Course name"
+                    className="flex-1"
+                  />
+                  <Input
+                    value={course.url || ""}
+                    onChange={(e) => {
+                      const updated = [...formData.courses];
+                      updated[idx] = { ...updated[idx], url: e.target.value || undefined };
+                      setFormData({ ...formData, courses: updated });
+                    }}
+                    placeholder="URL (optional)"
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setFormData({
+                        ...formData,
+                        courses: formData.courses.filter((_, i) => i !== idx),
+                      });
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="flex justify-end gap-2">

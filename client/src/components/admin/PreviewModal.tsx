@@ -46,9 +46,9 @@ export default function PreviewModal({ portfolio, onClose }: PreviewModalProps) 
             <div className="space-y-4">
               {portfolio.experiences.map((exp) => (
                 <Card key={exp.id} className="p-4">
-                  <p className="font-semibold">{exp.role} • {exp.company}</p>
+                  <p className="font-semibold">{exp.role} | {exp.company}</p>
                   <p className="text-sm text-muted-foreground">
-                    {exp.type} • {exp.location}
+                    {exp.type} | {exp.location}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {exp.startDate} — {exp.endDate}
@@ -56,7 +56,7 @@ export default function PreviewModal({ portfolio, onClose }: PreviewModalProps) 
                   <ul className="mt-3 space-y-1 text-sm">
                     {exp.bullets.map((bullet, idx) => (
                       <li key={idx} className="flex gap-2">
-                        <span>•</span>
+                        <span className="mt-1.5 h-2 w-2 shrink-0 border border-primary/50" aria-hidden="true" />
                         <span>{bullet}</span>
                       </li>
                     ))}

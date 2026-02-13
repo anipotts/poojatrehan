@@ -93,6 +93,13 @@ export interface PortfolioContent {
     serif?: string;
     sans?: string;
   } | null;
+  sectionVisibility: {
+    experience?: boolean;
+    education?: boolean;
+    skills?: boolean;
+    cta?: boolean;
+  } | null;
+  resumeUrl: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -107,6 +114,7 @@ export interface Experience {
   startDate: string;
   endDate: string;
   bullets: string[];
+  logoUrl: string | null;
   order: number;
   createdAt: string;
   updatedAt: string;
@@ -119,6 +127,7 @@ export interface Education {
   degree: string;
   dates: string;
   details: string | null;
+  courses: { name: string; url?: string }[] | null;
   order: number;
   createdAt: string;
   updatedAt: string;

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Trash2, GripVertical, Loader2 } from "lucide-react";
+import { Plus, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { experienceApi, type Portfolio, type Experience } from "@/lib/api";
+import { MonthYearPicker } from "@/components/ui/month-year-picker";
 import { toast } from "sonner";
 import DiffBadge from "./DiffBadge";
 import { getExperienceDiffStatus } from "@/lib/diff-utils";
@@ -54,13 +55,12 @@ export default function ExperienceEditor({ portfolio, publishedPortfolio, compar
                 <div className="flex items-center gap-2 flex-wrap">
                   <p className="text-base font-semibold">
                     {exp.role}
-                    <span className="text-muted-foreground"> • </span>
-                    <span className="text-foreground/85">{exp.company}</span>
                   </p>
                   {diffStatus && <DiffBadge status={diffStatus} />}
                 </div>
+                <p className="text-sm font-medium text-foreground/75">{exp.company}</p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {exp.type} • {exp.location}
+                  {exp.type} | {exp.location}
                 </p>
               </div>
               <div className="inline-flex items-center gap-2 rounded-full border bg-background/40 px-3 py-1.5 text-xs text-muted-foreground">
@@ -73,7 +73,7 @@ export default function ExperienceEditor({ portfolio, publishedPortfolio, compar
             <ul className="space-y-2 text-sm text-foreground/85">
               {exp.bullets.map((b, bIdx) => (
                 <li key={bIdx} className="flex gap-2">
-                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary/60" />
+                  <span className="mt-1.5 h-2 w-2 shrink-0 border border-primary/50" />
                   <span>{b}</span>
                 </li>
               ))}
@@ -138,6 +138,7 @@ function ExperienceDialog({ experience, portfolioId, onClose }: ExperienceDialog
     startDate: experience?.startDate || "",
     endDate: experience?.endDate || "",
     bullets: experience?.bullets || [""],
+    logoUrl: experience?.logoUrl || "",
   });
 
   const saveMutation = useMutation({
@@ -214,20 +215,31 @@ function ExperienceDialog({ experience, portfolioId, onClose }: ExperienceDialog
             </div>
             <div>
               <Label>Start Date</Label>
-              <Input
+              <MonthYearPicker
                 value={formData.startDate}
-                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                placeholder="e.g., May 2024"
+                onChange={(val) => setFormData({ ...formData, startDate: val })}
               />
             </div>
             <div>
               <Label>End Date</Label>
-              <Input
+              <MonthYearPicker
                 value={formData.endDate}
-                onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                placeholder="e.g., Aug 2024"
+                onChange={(val) => setFormData({ ...formData, endDate: val })}
+                allowPresent
               />
             </div>
+          </div>
+
+          <div>
+            <Label>Company Logo URL (optional)</Label>
+            <Input
+              value={formData.logoUrl}
+              onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value })}
+              placeholder="https://example.com/logo.png"
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              Direct link to company logo image
+            </p>
           </div>
 
           <div>
