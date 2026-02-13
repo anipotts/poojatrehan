@@ -2,9 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import {
   ArrowRight,
   BadgeCheck,
-  BookOpen,
-  Briefcase,
-  GraduationCap,
+  Download,
   Mail,
   MapPin,
   Moon,
@@ -13,7 +11,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+import { ExperienceCard } from "@/components/ExperienceCard";
+import { EducationCard } from "@/components/EducationCard";
 import type { Portfolio } from "@/lib/api";
 
 interface LivePreviewPaneProps {
@@ -129,12 +128,8 @@ export default function LivePreviewPane({
 
   return (
     <div ref={scrollContainerRef} className="surface h-full overflow-y-auto">
-      <div className="relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -top-28 left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-gradient-to-b from-primary/20 to-transparent blur-3xl" />
-        </div>
-
-        <div className="relative grain">
+      <div className="relative">
+        <div className="relative">
           <header className="mx-auto w-full max-w-6xl px-5 pt-5 pb-2 md:px-8 md:pt-8 md:pb-3">
             <nav className="flex items-center justify-between gap-3">
               <a
@@ -153,6 +148,7 @@ export default function LivePreviewPane({
               </a>
 
               <div className="flex items-center gap-2">
+                {portfolio.sectionVisibility?.experience !== false && (
                 <button
                   onClick={() => {
                     sectionRefs.current["experience"]?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -162,6 +158,8 @@ export default function LivePreviewPane({
                 >
                   Experience
                 </button>
+                )}
+                {portfolio.sectionVisibility?.education !== false && (
                 <button
                   onClick={() => {
                     sectionRefs.current["education"]?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -171,6 +169,8 @@ export default function LivePreviewPane({
                 >
                   Education
                 </button>
+                )}
+                {portfolio.sectionVisibility?.skills !== false && (
                 <button
                   onClick={() => {
                     sectionRefs.current["skills"]?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -180,6 +180,7 @@ export default function LivePreviewPane({
                 >
                   Skills
                 </button>
+                )}
                 <Button
                   variant="outline"
                   className="rounded-full bg-card/70 backdrop-blur"
@@ -202,8 +203,8 @@ export default function LivePreviewPane({
               onClick={() => handleSectionClick("profile")}
               ref={(el) => { sectionRefs.current["profile"] = el; }}
             >
-              <div className="mt-8 grid grid-cols-1 items-start gap-12 lg:grid-cols-[1fr_400px]">
-                <div>
+              <div className="mt-8 flex flex-col gap-6 lg:grid lg:grid-cols-[1fr_400px] lg:items-start lg:gap-12">
+                <div className="order-1 lg:order-none flex flex-col">
                   <h1 className="animate-item mt-8 text-balance font-serif text-4xl font-semibold tracking-[-0.03em] md:text-6xl">
                     {portfolio.heroTitle}
                   </h1>
@@ -211,27 +212,9 @@ export default function LivePreviewPane({
                   <p className="animate-item mt-4 max-w-2xl text-pretty text-base leading-relaxed text-muted-foreground md:text-lg">
                     {portfolio.heroSubtitle}
                   </p>
-
-                  <div className="animate-item mt-7 flex flex-wrap items-center gap-2">
-                    <Anchor href={`mailto:${portfolio.profileEmail}`}>
-                      <Mail className="h-4 w-4" aria-hidden="true" />
-                      {portfolio.profileEmail}
-                    </Anchor>
-                    <div className="inline-flex items-center gap-2 rounded-full border bg-card px-3 py-2 text-sm text-foreground/90 shadow-elev-sm">
-                      <MapPin className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-                      {portfolio.profileLocation}
-                    </div>
-                    <a
-                      href="#experience"
-                      className="focus-ring inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-elev-sm transition hover:-translate-y-0.5 hover:shadow-elev"
-                    >
-                      View experience
-                      <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                    </a>
-                  </div>
                 </div>
 
-                <div className="animate-item relative mx-auto w-full max-w-sm lg:mx-0 lg:max-w-none">
+                <div className="order-3 lg:order-none animate-item relative mx-auto w-full max-w-sm lg:mx-0 lg:max-w-none lg:row-span-2">
                   <div className="aspect-[4/5] overflow-hidden rounded-[2rem] border bg-muted shadow-elev">
                     {portfolio.profileImageUrl ? (
                       <img
@@ -246,53 +229,43 @@ export default function LivePreviewPane({
                     )}
                   </div>
                 </div>
+
+                <div className="order-2 lg:order-none animate-item mt-0 lg:mt-7 flex flex-wrap items-center gap-2">
+                  <a
+                    href={`mailto:${portfolio.profileEmail}`}
+                    className="focus-ring hidden md:inline-flex items-center gap-2 rounded-full border bg-card px-3 py-2 text-sm text-foreground/90 shadow-elev-sm transition hover:-translate-y-0.5 hover:shadow-elev"
+                  >
+                    <Mail className="h-4 w-4" aria-hidden="true" />
+                    {portfolio.profileEmail}
+                  </a>
+                  <a
+                    href="#experience"
+                    className="focus-ring inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-elev-sm transition hover:-translate-y-0.5 hover:shadow-elev"
+                  >
+                    View experience
+                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                  </a>
+                  {portfolio.resumeUrl && (
+                    <a
+                      href={portfolio.resumeUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="focus-ring inline-flex items-center gap-2 rounded-full border bg-card px-3 py-2 text-sm text-foreground/90 shadow-elev-sm transition hover:-translate-y-0.5 hover:shadow-elev"
+                    >
+                      <Download className="h-4 w-4" aria-hidden="true" />
+                      Resume
+                    </a>
+                  )}
+                  <div className="inline-flex items-center gap-2 rounded-full border bg-card px-3 py-2 text-sm text-foreground/90 shadow-elev-sm">
+                    <MapPin className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                    {portfolio.profileLocation}
+                  </div>
+                </div>
               </div>
 
-              <div className="animate-item mt-10 grid grid-cols-1 gap-4 md:grid-cols-3">
-                <Card className="shadow-elev-sm border bg-card/70 p-5 backdrop-blur">
-                  <div className="flex items-start gap-3">
-                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                      <Briefcase className="h-5 w-5" aria-hidden="true" />
-                    </span>
-                    <div>
-                      <p className="text-sm font-semibold">Accounting internships</p>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        Practical support across reporting, records, and reconciliations.
-                      </p>
-                    </div>
-                  </div>
-                </Card>
-
-                <Card className="shadow-elev-sm border bg-card/70 p-5 backdrop-blur">
-                  <div className="flex items-start gap-3">
-                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                      <GraduationCap className="h-5 w-5" aria-hidden="true" />
-                    </span>
-                    <div>
-                      <p className="text-sm font-semibold">Economics @ NYU</p>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        Quantitative thinking with a disciplined, structured approach.
-                      </p>
-                    </div>
-                  </div>
-                </Card>
-
-                <Card className="shadow-elev-sm border bg-card/70 p-5 backdrop-blur">
-                  <div className="flex items-start gap-3">
-                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                      <BookOpen className="h-5 w-5" aria-hidden="true" />
-                    </span>
-                    <div>
-                      <p className="text-sm font-semibold">Clear communication</p>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        Structured updates, polished writing, and calm execution.
-                      </p>
-                    </div>
-                  </div>
-                </Card>
-              </div>
             </section>
 
+            {portfolio.sectionVisibility?.experience !== false && (
             <section
               id="experience"
               className="pt-16 md:pt-20"
@@ -303,66 +276,30 @@ export default function LivePreviewPane({
 
               <div className="grid grid-cols-1 gap-4">
                 {portfolio.experiences.map((exp, idx) => (
-                  <Card
-                    key={exp.id}
-                    className="shadow-elev-sm border bg-card/70 p-5 backdrop-blur transition hover:-translate-y-0.5 hover:shadow-elev"
-                  >
-                    <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                      <div>
-                        <p className="text-base font-semibold">
-                          {exp.role}
-                          <span className="text-muted-foreground"> • </span>
-                          <span className="text-foreground/85">{exp.company}</span>
-                        </p>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          {exp.type} • {exp.location}
-                        </p>
-                      </div>
-                      <div className="inline-flex items-center gap-2 rounded-full border bg-background/40 px-3 py-1.5 text-xs text-muted-foreground">
-                        {exp.startDate} — {exp.endDate}
-                      </div>
-                    </div>
-
-                    <Separator className="my-4" />
-
-                    <ul className="space-y-2 text-sm text-foreground/85">
-                      {exp.bullets.map((b, bIdx) => (
-                        <li key={bIdx} className="flex gap-2">
-                          <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary/60" aria-hidden="true" />
-                          <span>{b}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </Card>
+                  <ExperienceCard key={exp.id} experience={exp} index={idx} />
                 ))}
               </div>
             </section>
+            )}
 
+            {portfolio.sectionVisibility?.education !== false && (
             <section
               id="education"
               className="pt-16 md:pt-20"
               onClick={() => handleSectionClick("education")}
               ref={(el) => { sectionRefs.current["education"] = el; }}
             >
-              <SectionHeading eyebrow="Education" title="Where I study" id="education" />
+              <SectionHeading eyebrow="Education" title="Academic Background" id="education" />
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {portfolio.education.map((ed, idx) => (
-                  <Card
-                    key={ed.id}
-                    className="shadow-elev-sm border bg-card/70 p-5 backdrop-blur"
-                  >
-                    <p className="text-sm font-semibold">{ed.school}</p>
-                    <p className="mt-1 text-sm text-muted-foreground">{ed.degree}</p>
-                    <p className="mt-3 text-xs text-muted-foreground">{ed.dates}</p>
-                    {ed.details ? (
-                      <p className="mt-3 text-sm text-foreground/80">{ed.details}</p>
-                    ) : null}
-                  </Card>
+                  <EducationCard key={ed.id} education={ed} index={idx} />
                 ))}
               </div>
             </section>
+            )}
 
+            {portfolio.sectionVisibility?.skills !== false && (
             <section
               id="skills"
               className="pt-16 md:pt-20"
@@ -385,14 +322,12 @@ export default function LivePreviewPane({
                 </div>
               </Card>
             </section>
+            )}
 
+            {portfolio.sectionVisibility?.cta !== false && (
             <section className="pt-16 md:pt-20">
-              <Card className="relative overflow-hidden border bg-card/70 p-6 shadow-elev backdrop-blur">
-                <div className="pointer-events-none absolute inset-0">
-                  <div className="absolute -right-24 -top-24 h-64 w-64 rounded-full bg-primary/15 blur-3xl" />
-                </div>
-
-                <div className="relative flex flex-col items-start gap-4 md:flex-row md:items-center md:justify-between">
+              <Card className="relative border bg-card/70 p-6 shadow-elev backdrop-blur">
+                <div className="flex flex-col items-start gap-4 md:flex-row md:items-center md:justify-between">
                   <div>
                     <p className="font-serif text-2xl font-semibold tracking-[-0.02em]">
                       Let's connect.
@@ -413,22 +348,17 @@ export default function LivePreviewPane({
                 </div>
               </Card>
             </section>
+            )}
 
             <footer className="pt-14">
-              <div className="flex flex-col items-start justify-between gap-4 border-t py-8 md:flex-row md:items-center">
+              <div className="flex items-center justify-between border-t py-8">
                 <p className="text-sm text-muted-foreground">
-                  © {new Date().getFullYear()} {portfolio.profileName} • Built with care
+                  © {new Date().getFullYear()} {portfolio.profileName}
                 </p>
-                <div className="flex flex-wrap items-center gap-2">
-                  <Anchor href={`mailto:${portfolio.profileEmail}`}>
-                    <Mail className="h-4 w-4" aria-hidden="true" />
-                    Email
-                  </Anchor>
-                  <Anchor href="#top">
-                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                    Back to top
-                  </Anchor>
-                </div>
+                <Anchor href={`mailto:${portfolio.profileEmail}`}>
+                  <Mail className="h-4 w-4" aria-hidden="true" />
+                  Email
+                </Anchor>
               </div>
             </footer>
           </main>

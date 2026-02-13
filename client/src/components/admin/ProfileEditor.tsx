@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Upload, Loader2, Check, AlertCircle } from "lucide-react";
+import { Upload, Loader2, Check, AlertCircle, FileText, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { portfolioApi, imageApi, type Portfolio } from "@/lib/api";
 import { toast } from "sonner";
+import SectionVisibilityEditor from "./SectionVisibilityEditor";
 
 interface ProfileEditorProps {
   portfolio: Portfolio;
@@ -44,13 +45,17 @@ export default function ProfileEditor({ portfolio }: ProfileEditorProps) {
   });
 
   const [uploading, setUploading] = useState(false);
+  const [uploadingResume, setUploadingResume] = useState(false);
   const [saveState, setSaveState] = useState<'saved' | 'saving' | 'error' | null>(null);
 
   // Debounce form data for auto-save
   const debouncedFormData = useDebounce(formData, 1000);
 
+  const formDataRef = useRef(formData);
+  formDataRef.current = formData;
+
   const saveMutation = useMutation({
-    mutationFn: () => portfolioApi.saveDraft(formData),
+    mutationFn: (data: typeof formData) => portfolioApi.saveDraft(data),
     onMutate: () => {
       setSaveState('saving');
     },
@@ -81,7 +86,7 @@ export default function ProfileEditor({ portfolio }: ProfileEditorProps) {
     });
 
     if (hasChanged) {
-      saveMutation.mutate();
+      saveMutation.mutate(debouncedFormData);
     }
   }, [debouncedFormData]);
 
@@ -90,13 +95,13 @@ export default function ProfileEditor({ portfolio }: ProfileEditorProps) {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 's') {
         e.preventDefault();
-        saveMutation.mutate();
+        saveMutation.mutate(formDataRef.current);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [formData]);
+  }, []);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -119,10 +124,48 @@ export default function ProfileEditor({ portfolio }: ProfileEditorProps) {
       await portfolioApi.saveDraft({ profileImageUrl: url });
       queryClient.invalidateQueries({ queryKey: ["portfolio", "draft"] });
       toast.success("Image uploaded successfully!");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to upload image");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to upload image");
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleResumeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.type !== "application/pdf") {
+      toast.error("Please select a PDF file");
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Resume must be less than 10MB");
+      return;
+    }
+
+    setUploadingResume(true);
+
+    try {
+      const { url } = await imageApi.upload(file);
+      await portfolioApi.saveDraft({ resumeUrl: url });
+      queryClient.invalidateQueries({ queryKey: ["portfolio", "draft"] });
+      toast.success("Resume uploaded successfully!");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to upload resume");
+    } finally {
+      setUploadingResume(false);
+    }
+  };
+
+  const handleRemoveResume = async () => {
+    try {
+      await portfolioApi.saveDraft({ resumeUrl: null });
+      queryClient.invalidateQueries({ queryKey: ["portfolio", "draft"] });
+      toast.success("Resume removed");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to remove resume");
     }
   };
 
@@ -201,6 +244,67 @@ export default function ProfileEditor({ portfolio }: ProfileEditorProps) {
               </Button>
               <p className="mt-1 text-xs text-muted-foreground">
                 PNG, JPG up to 5MB
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Resume PDF */}
+        <div>
+          <Label>Resume PDF</Label>
+          <div className="mt-2">
+            {portfolio.resumeUrl ? (
+              <div className="flex items-center gap-3">
+                <a
+                  href={portfolio.resumeUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
+                >
+                  <FileText className="h-4 w-4" />
+                  View current resume
+                </a>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRemoveResume}
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Remove
+                </Button>
+              </div>
+            ) : null}
+            <div className="mt-2">
+              <input
+                type="file"
+                id="resume-upload"
+                accept="application/pdf"
+                onChange={handleResumeUpload}
+                className="hidden"
+                disabled={uploadingResume}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => document.getElementById("resume-upload")?.click()}
+                disabled={uploadingResume}
+              >
+                {uploadingResume ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="mr-2 h-4 w-4" />
+                    {portfolio.resumeUrl ? "Replace Resume" : "Upload Resume"}
+                  </>
+                )}
+              </Button>
+              <p className="mt-1 text-xs text-muted-foreground">
+                PDF up to 10MB
               </p>
             </div>
           </div>
@@ -303,6 +407,8 @@ export default function ProfileEditor({ portfolio }: ProfileEditorProps) {
           </div>
         </div>
       </Card>
+
+      <SectionVisibilityEditor portfolio={portfolio} />
     </div>
   );
 }
